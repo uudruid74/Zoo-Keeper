@@ -1,0 +1,17 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="android:Theme.Holo.Light.DarkActionBar">
+        <item name="android:textColorSecondary">@color/primary_color</item>
+        <item name="android:textColorPrimary">@color/blackness</item>
+        <item name="android:colorPrimary">@color/panel_color</item>
+        <item name="android:colorPrimaryDark">@color/dark_color</item>
+        <item name="android:colorForeground">@color/panel_color</item>
+        <item name="android:colorBackground">@android:color/white</item>
+        <item name="android:statusBarColor">@color/blackness</item>
+        <item name="android:navigationBarColor">@color/blackness</item>
+    </style>
+    <style name="ColorSwitchStyle">
+        <item name="android:colorControlActivated">@color/primary_color</item>
+    </style>
+</resources>

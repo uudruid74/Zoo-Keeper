@@ -1,0 +1,64 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    tools:context=".ZooGate$PlaceholderFragment"
+    android:id="@+id/section_layout">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="@string/about_title"
+        android:id="@+id/rom_title"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="5dp" />
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dip"
+        android:layout_marginTop="15dp"
+        android:layout_below="@+id/rom_title"
+        android:background="#000000"
+        android:id="@+id/view" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:id="@+id/about_text"
+        android:layout_below="@+id/view"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:text="@string/about_text"
+        android:typeface="normal"
+        android:textIsSelectable="false"
+        android:textSize="16sp"
+        android:linksClickable="true"
+        android:gravity="fill_horizontal"
+        android:clickable="true"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:layout_marginTop="10dp"
+        android:enabled="true"
+        android:breakStrategy="high_quality"
+        android:elegantTextHeight="true"
+        android:textAlignment="gravity"
+        android:nestedScrollingEnabled="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="v.1.0.0"
+        android:id="@+id/version_text"
+        android:layout_alignBottom="@+id/view"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="5dp" />
+
+
+</RelativeLayout>

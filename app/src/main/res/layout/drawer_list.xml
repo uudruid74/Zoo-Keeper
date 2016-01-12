@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingTop="20dp"
+    android:weightSum="1"
+    android:gravity="end|right">
+    <TextView
+        android:id="@+id/label"
+        android:layout_width="250dp"
+        android:layout_height="fill_parent"
+        android:textSize="18sp"
+        android:enabled="false"
+        android:layout_marginLeft="30dp"
+        android:clickable="false"
+        android:typeface="sans"
+        android:layout_marginTop="2dp"
+        android:shadowColor="#000637"
+        android:layout_weight="3.09"
+        android:layout_gravity="top"
+        android:layout_marginRight="30dp"
+        android:gravity="end|right"
+        android:textColor="@color/hilight_color"
+        android:text="This is test text"
+        android:layout_marginBottom="2dp">
+    </TextView>
+</LinearLayout>

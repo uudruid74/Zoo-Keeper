@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="primary_color" type="color">#FF1E88E5</item>
+    <item name="hilight_color" type="color">#FF64B5F6</item>
+    <item name="oldhilight_color" type="color">#FF90CAF9</item>
+    <item name="dark_color" type="color">#1565C0</item>
+    <item name="blackness" type="color">#161616</item>
+    <item name="panel_color" type="color">#382613</item>
+</resources>

@@ -1,0 +1,353 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    tools:context=".ZooGate$PlaceholderFragment"
+    android:id="@+id/section_layout">
+
+    <Switch
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/cron_manager_title"
+        android:id="@+id/cron_switch"
+        android:checked="true"
+        android:layout_marginLeft="25dp"
+        android:layout_marginRight="25dp"
+        android:textAlignment="center"
+        android:layout_alignParentStart="true"
+        android:textSize="22sp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:trackTint="@android:color/black"
+        android:thumbTint="@color/primary_color"
+        android:thumbTintMode="src_over"
+        android:trackTintMode="src_over"
+        android:showText="true"
+        android:splitTrack="false"
+        android:clickable="true"
+        android:contextClickable="false"
+        android:longClickable="true"
+        android:enabled="true" />
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dip"
+        android:layout_marginTop="15dp"
+        android:layout_below="@+id/cron_switch"
+        android:background="#000000"
+        android:id="@+id/view" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Daily Tasks"
+        android:id="@+id/textView18"
+        android:layout_below="@+id/view"
+        android:layout_alignParentStart="true"
+        android:textStyle="bold"
+        android:layout_marginTop="25dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Hour"
+        android:id="@+id/textView19"
+        android:layout_below="@+id/textView18"
+        android:layout_alignParentStart="true" />
+
+    <EditText
+        android:layout_width="60dp"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="10"
+        android:id="@+id/daily_hour"
+        android:layout_toEndOf="@+id/textView19"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_alignBottom="@+id/textView19"
+        android:layout_alignBaseline="@+id/textView19"
+        android:hint="0-23" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Min"
+        android:id="@+id/textView20"
+        android:layout_below="@+id/textView18"
+        android:layout_toStartOf="@+id/daily_min" />
+
+    <EditText
+        android:layout_width="60dp"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="10"
+        android:id="@+id/daily_min"
+        android:layout_marginLeft="10dp"
+        android:hint="0-59"
+        android:layout_toStartOf="@+id/edit_daily"
+        android:layout_alignBottom="@+id/daily_hour"
+        android:layout_alignBaseline="@+id/textView19"
+        android:layout_toLeftOf="@+id/edit_daily"
+        android:layout_marginRight="10dp" />
+
+    <Button
+        android:layout_width="100sp"
+        android:layout_height="50dp"
+        android:text="Edit"
+        android:id="@+id/edit_daily"
+        android:layout_marginLeft="5dp"
+        android:layout_alignBottom="@+id/daily_min"
+        android:layout_alignParentEnd="true"
+        android:layout_alignBaseline="@+id/daily_min" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Hourly Tasks"
+        android:id="@+id/textView21"
+        android:textStyle="bold"
+        android:layout_below="@+id/daily_hour"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="20dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Min"
+        android:id="@+id/textView22"
+        android:layout_below="@+id/textView21"
+        android:layout_alignParentStart="true" />
+
+    <EditText
+        android:layout_width="60dp"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="10"
+        android:id="@+id/hourly_min"
+        android:layout_marginLeft="10dp"
+        android:layout_toEndOf="@+id/textView19"
+        android:layout_alignBottom="@+id/textView22"
+        android:layout_alignBaseline="@+id/textView22"
+        android:hint="0-59" />
+
+    <Button
+        android:layout_width="100sp"
+        android:layout_height="50dp"
+        android:text="Edit"
+        android:id="@+id/edit_hourly"
+        android:layout_marginLeft="5dp"
+        android:layout_alignBottom="@+id/hourly_min"
+        android:layout_alignParentEnd="true"
+        android:layout_alignBaseline="@+id/hourly_min" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Weekly Tasks"
+        android:id="@+id/textView23"
+        android:textStyle="bold"
+        android:layout_below="@+id/hourly_min"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="20dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Day"
+        android:id="@+id/textView24"
+        android:layout_below="@+id/textView23"
+        android:layout_alignParentStart="true" />
+
+    <EditText
+        android:layout_width="60dp"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="10"
+        android:id="@+id/weekly_day"
+        android:layout_alignStart="@+id/hourly_min"
+        android:layout_alignBottom="@+id/textView24"
+        android:layout_alignBaseline="@+id/textView24"
+        android:hint="0-6" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Hour"
+        android:id="@+id/textView25"
+        android:layout_alignTop="@+id/textView24"
+        android:layout_toStartOf="@+id/daily_min" />
+
+    <EditText
+        android:layout_width="60dp"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="10"
+        android:id="@+id/weekly_hour"
+        android:layout_toEndOf="@+id/textView25"
+        android:layout_alignBottom="@+id/textView25"
+        android:layout_alignBaseline="@+id/textView25"
+        android:hint="0-23"
+        android:layout_marginLeft="10dp" />
+
+    <Button
+        android:layout_width="100sp"
+        android:layout_height="50dp"
+        android:text="Edit"
+        android:id="@+id/edit_weekly"
+        android:layout_marginLeft="5dp"
+        android:layout_alignBottom="@+id/weekly_hour"
+        android:layout_alignParentEnd="true"
+        android:layout_alignBaseline="@+id/weekly_hour" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Monthly Tasks"
+        android:id="@+id/textView26"
+        android:textStyle="bold"
+        android:layout_below="@+id/weekly_day"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="20dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Day"
+        android:id="@+id/textView27"
+        android:layout_below="@+id/textView26"
+        android:layout_alignParentStart="true" />
+
+    <EditText
+        android:layout_width="60dp"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="10"
+        android:id="@+id/monthly_day"
+        android:layout_alignStart="@+id/weekly_day"
+        android:layout_alignBottom="@+id/textView27"
+        android:layout_alignBaseline="@+id/textView27"
+        android:hint="1-31" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Hour"
+        android:id="@+id/textView28"
+        android:layout_alignTop="@+id/textView27"
+        android:layout_alignStart="@+id/textView25" />
+
+    <EditText
+        android:layout_width="60dp"
+        android:layout_height="wrap_content"
+        android:inputType="number"
+        android:ems="10"
+        android:id="@+id/monthly_hour"
+        android:hint="0-23"
+        android:layout_alignBottom="@+id/monthly_day"
+        android:layout_alignStart="@+id/weekly_hour"
+        android:layout_alignBaseline="@+id/monthly_day" />
+
+    <Button
+        android:layout_width="100sp"
+        android:layout_height="50dp"
+        android:text="Edit"
+        android:id="@+id/edit_monthly"
+        android:layout_marginLeft="5dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignBottom="@+id/textView27"
+        android:layout_alignBaseline="@+id/textView27" />
+
+    <Button
+        android:layout_width="100sp"
+        android:layout_height="50dp"
+        android:text="Edit"
+        android:id="@+id/advanced_edit"
+        android:layout_marginLeft="5dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="This file is in Unix &apos;crontab&apos; format"
+        android:id="@+id/textView29"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="10dp"
+        android:textStyle="italic" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Advanced Tasks"
+        android:id="@+id/textView30"
+        android:layout_above="@+id/textView29"
+        android:layout_alignParentStart="true"
+        android:textStyle="bold" />
+
+    <Button
+        android:layout_width="100sp"
+        android:layout_height="50dp"
+        android:text="View"
+        android:id="@+id/log_button"
+        android:layout_marginLeft="5dp"
+        android:layout_alignParentEnd="true"
+        android:layout_above="@+id/advanced_edit"
+        android:layout_marginBottom="25dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Cron Log File:"
+        android:id="@+id/textView32"
+        android:layout_above="@+id/textView33"
+        android:layout_alignParentStart="true"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:id="@+id/full_timezone"
+        android:layout_above="@+id/log_button"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="10dp" />
+
+    <Button
+        android:layout_width="100sp"
+        android:layout_height="50dp"
+        android:text="Clear"
+        android:id="@+id/clear_log_button"
+        android:layout_marginLeft="10dp"
+        android:layout_alignTop="@+id/log_button"
+        android:layout_toStartOf="@+id/log_button"
+        android:layout_marginRight="10dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="cronlog.txt"
+        android:id="@+id/textView33"
+        android:layout_alignBottom="@+id/clear_log_button"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="5dp" />
+
+
+</RelativeLayout>

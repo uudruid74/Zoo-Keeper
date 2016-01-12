@@ -1,0 +1,58 @@
+<resources>
+    <string name="app_name">Zoo Keeper</string>
+
+    <string name="title_section1">Current Info</string>
+    <string name="title_section2">System Updates</string>
+    <string name="title_section3">Ad Blocker</string>
+    <string name="title_section4">Cron</string>
+    <string name="title_section5">About</string>
+
+    <string name="default_ntp_server">time.izatcloud.net</string>
+    <string name="unknown_info">Unknown</string>
+    <string name="unknown_date">Never</string>
+    <string name="new_rom_available">A New ROM Update is Available!</string>
+    <string name="upgrade_app">Upgrade App</string>
+    <string name="view_changelog">View Changelog</string>
+    <string name="fetch_rom">Fetch Rom</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_example">Check</string>
+    <string name="action_help">Help</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="about_title">About ZooKeeper </string>
+    <string name="about_text">This program is provided by <a href="https://eddon.systems">Eddon
+            Systems</a>. If you have a particular project in mind, feel free to inquire on
+        the website!\n\nZoo Keeper is a small program designed to
+        provide for OTA updates and customizations of the WildLife Android ROM. It
+        has no connection with the Apache project of the same
+        name or ROM\'s for phones other than OnePlus\n\nAutomatic updates require the Cron
+        service to be enabled.  At the given time, the
+        system will check for a new ROM and notify you.  Optionally, it can auto-download, prepare
+        an OpenRecovery script to flash the ROM (when you reboot into a compatible recovery), and even
+        reboot for you.\n\nCurrently, only modern versions of TWRP and Phil\'z Recovery are supported.
+        You can also schedule your own tasks with the Cron services and tweak the
+        ad-blocker.\n\nPlease report bugs to
+        <a href="mailto:evan+zookeeper@eddon.systems">evan+zookeeper@eddon.systems</a>
+    </string>
+
+    <string name="ad_blocker_title">Ad Blocker</string>
+    <string name="ad_blocker_help">The whitelist can contain partial string matches or a regex.
+    The blacklist must contain the fully qualified hostname you wish to block. Any hosts
+    not listed will be treated as per standard Moab blocking. If you have problems, switch
+        it off!  Alternately, <b>long-press the switch to turn it off for just a few seconds.</b>
+    </string>
+    <string name="ad_blocker_allow">Whitelisted Domains</string>
+    <string name="ad_blocker_deny">Blacklisted Domains</string>
+    <string name="ad_blocker_tempmsg">Ad Blocker disabled for 15 seconds!</string>
+    <string name="ad_blocker_reinstalled">Ad Blocker is now ON!</string>
+    <string name="cron_manager_title">Cron Scheduler</string>
+    <string name="update_manager_title">Automatic Updates</string>
+    <string name="install_after_fetch">Create OpenRecovery Script</string>
+    <string name="auto_reboot_after_install">Automatic Reboot To Recovery</string>
+    <string name="download_avail">Download New ROMs if available</string>
+    <string name="title_activity_settings">Settings</string>
+
+</resources>
