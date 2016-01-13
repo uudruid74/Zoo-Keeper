@@ -249,18 +249,18 @@ public class CronManagerFragment extends Fragment {
             e.putBoolean(ZooGate.PREF_USER_CRON_SERVICES, true);
             e.putInt(CRON_DAILYHOUR, Integer.valueOf(h = dailyhour.getText().toString()));
             e.putInt(CRON_DAILYMIN, Integer.valueOf(m = dailymin.getText().toString()));
-            sb.append(m + " " + h + " * * *    run-parts /system/etc/cron.daily >" + log + " 2>&1\n");
+            sb.append(m + " " + h + " * * *    run-parts /system/etc/cron.daily >>" + log + " 2>&1\n");
 
             e.putInt(CRON_HOURLYMIN, Integer.valueOf(m = hourlymin.getText().toString()));
-            sb.append(m + " * * * *   run-parts /system/etc/cron.hourly >" + log + " 2>&1\n");
+            sb.append(m + " * * * *   run-parts /system/etc/cron.hourly >>" + log + " 2>&1\n");
 
             e.putInt(CRON_WEEKLYDAY, Integer.valueOf(d = weeklyday.getText().toString()));
             e.putInt(CRON_WEEKLYHOUR, Integer.valueOf(h = weeklyhour.getText().toString()));
-            sb.append("20 " + h + " * * " + d + "   run-parts /system/etc/cron.weekly >" + log + " 2>&1\n");
+            sb.append("20 " + h + " * * " + d + "   run-parts /system/etc/cron.weekly >>" + log + " 2>&1\n");
 
             e.putInt(CRON_MONTHLYDAY, Integer.valueOf(d = monthlyday.getText().toString()));
             e.putInt(CRON_MONTHLYHOUR, Integer.valueOf(h = monthlyhour.getText().toString()));
-            sb.append("20 " + h + " " + d + " * *   run-parts /system/etc/cron.monthly >" + log + " 2>&1\n");
+            sb.append("20 " + h + " " + d + " * *   run-parts /system/etc/cron.monthly >>" + log + " 2>&1\n");
             e.apply();
             write.write(sb.toString().getBytes(), 0, sb.length());
             write.close();

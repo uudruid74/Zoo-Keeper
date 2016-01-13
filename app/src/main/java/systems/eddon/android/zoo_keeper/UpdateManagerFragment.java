@@ -249,7 +249,7 @@ public class UpdateManagerFragment extends Fragment {
             ZooGate.updatePref(ZooGate.PREF_UPDATE_TIME, h+":"+m);
             sb.append(m + " " + h + " * * *  am startservice -n \""+
                     "systems.eddon.android.zoo_keeper/.NotifyDownloader\" --es Action Upgrade "+
-                    ">"+log+" 2>&1");
+                    ">>"+log+" 2>&1");
             write.write(sb.toString().getBytes(), 0, sb.length());
             write.close();
         }

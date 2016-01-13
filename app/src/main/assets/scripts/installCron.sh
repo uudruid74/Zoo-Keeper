@@ -19,7 +19,17 @@ for DIR in $SUBDIRS; do
     mkdir /system/etc/cron.$DIR
     chown root.root /system/etc/cron.$DIR
     chmod 775 /system/etc/cron.$DIR
-    cat >$USERDIR/$DIR <<EOL
+    if [ "$DIR" == "hourly" ]; then
+        cat >$USERDIR/$DIR <<EOH
+#!/system/bin/sh
+#
+# This is a simple shell script, just add your own commands!
+#
+ZooToast "Running $DIR crontab"
+
+EOH
+    else
+        cat >$USERDIR/$DIR <<EOL
 #!/system/bin/sh
 #
 # This is a simple shell script, just add your own commands!
@@ -27,6 +37,7 @@ for DIR in $SUBDIRS; do
 ZooNotify "Running $DIR crontab" "file:///sdcard/Cron/cronlog.txt"
 
 EOL
+    fi
     chown root.root $USERDIR/$DIR
     chmod 777 $USERDIR/$DIR
     ln -s $USERDIR/$DIR /system/etc/cron.$DIR/zookeeper

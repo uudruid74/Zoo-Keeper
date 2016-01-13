@@ -372,10 +372,10 @@ public class ZooGate extends Activity
                     try {
                         FileOutputStream write = new FileOutputStream(simple);
                         StringBuffer sb = new StringBuffer();
-                        sb.append("0 3 * * *    run-parts /system/etc/cron.daily >"+log+" 2>&1\n");
-                        sb.append("10 * * * *   run-parts /system/etc/cron.hourly >"+log+" 2>&1\n");
-                        sb.append("20 4 * * 1   run-parts /system/etc/cron.weekly >"+log+" 2>&1\n");
-                        sb.append("20 5 1 * *   run-parts /system/etc/cron.monthly >"+log+" 2>&1\n");
+                        sb.append("0 3 * * *    run-parts /system/etc/cron.daily >>"+log+" 2>&1\n");
+                        sb.append("10 * * * *   run-parts /system/etc/cron.hourly >>"+log+" 2>&1\n");
+                        sb.append("20 4 * * 1   run-parts /system/etc/cron.weekly >>"+log+" 2>&1\n");
+                        sb.append("20 5 1 * *   run-parts /system/etc/cron.monthly >>"+log+" 2>&1\n");
                         write.write(sb.toString().getBytes(), 0, sb.length());
                         write.close();
                     }
@@ -390,7 +390,7 @@ public class ZooGate extends Activity
                         StringBuffer sb = new StringBuffer();
                         sb.append("5 2 * * *    am startservice -n "+
                         "\"systems.eddon.android.zoo_keeper/.NotifyDownloader\""+
-                                " --es Action Upgrade >"+log+" 2>&1");
+                                " --es Action Upgrade >>"+log+" 2>&1");
                         write.write(sb.toString().getBytes(), 0, sb.length());
                         write.close();
                     }

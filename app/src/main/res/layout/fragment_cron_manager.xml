@@ -314,7 +314,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="Cron Log File:"
+        android:text="Cron Log File"
         android:id="@+id/textView32"
         android:layout_above="@+id/textView33"
         android:layout_alignParentStart="true"
