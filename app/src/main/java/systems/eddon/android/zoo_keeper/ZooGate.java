@@ -356,7 +356,7 @@ public class ZooGate extends Activity
         @Override
         public boolean onKey(View v, int keyCode, KeyEvent event) {
             if (keyCode == KeyEvent.KEYCODE_BACK) {
-                if (ZooGate.myActivity.getLocalClassName().matches("Notify")) {
+                if (!ZooGate.myActivity.getLocalClassName().matches("Notify")) {
                     ZooGate z = (ZooGate) ZooGate.myActivity;
                     z.onNavigationDrawerItemSelected(0);
                     return true;
