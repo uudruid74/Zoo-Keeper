@@ -25,11 +25,9 @@
             android:name=".NotifyDownloader"
             android:exported="false" />
 
-        <activity android:name=".Notify">
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-            </intent-filter>
-        </activity>
+        <service android:name=".Notify"
+            android:exported="true" />
+
         <activity android:name=".SettingsActivity"
             android:screenOrientation="portrait">
         </activity>

@@ -85,12 +85,20 @@ cat >/system/xbin/ZooNotify <<"EONTF"
 # It takes 3 arguments (quote them). The message, the URL to go to on a click, and a type
 # If no type is specified, it defaults to "text/plain"
 #
-if [ -z "$3" ]; then
-    am start -n "systems.eddon.android.zoo_keeper/.Notify" --es Message "$1" --es URL "$2"
-else
-    am start -n "systems.eddon.android.zoo_keeper/.Notify" --es Message "$1" --es URL "$2" --es Type "$3"
+MESSAGE="$1"
+URL="$2"
+TYPE="$3"
+
+if [ -z "$URL" ]; then
+        URL="file://$0"
 fi
-echo "$1"
+
+if [ -z "$3" ]; then
+    am startservice -n "systems.eddon.android.zoo_keeper/.Notify" --es Message "$MESSAGE" --es URL "$URL"
+else
+    am startservice -n "systems.eddon.android.zoo_keeper/.Notify" --es Message "$MESSAGE" --es URL "$URL" --es Type "$TYPE"
+fi
+echo "$MESSAGE"
 
 EONTF
 

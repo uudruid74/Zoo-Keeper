@@ -1,6 +1,7 @@
 package systems.eddon.android.zoo_keeper;
 
 import android.app.Activity;
+import android.app.IntentService;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
@@ -11,15 +12,10 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
-public class Notify extends Activity {
+public class Notify extends IntentService {
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        getActionBar().hide();
-        setContentView(R.layout.activity_notify);
-        Intent intent = getIntent();
-        ZooGate.myActivity = this;
+    protected void onHandleIntent(Intent intent) {
         String Message = intent.getStringExtra(ZooGate.EXTRA_MESSAGE);
         String UrlContent = intent.getStringExtra(ZooGate.EXTRA_URL);
         String Type = intent.getStringExtra(ZooGate.EXTRA_TYPE);
@@ -27,8 +23,9 @@ public class Notify extends Activity {
         if (UrlContent != null) {
             showNotificationURL(Message,UrlContent,Type);
         }
-        finish();
     }
+    public Notify() { super("ZooKeeper Notify"); }
+
     private void showNotificationURL (String Message, String UrlContent,String Type) {
         Log.d("showNotificationUrl", "String: " + Message + " URL: " + UrlContent + " Type: "+Type);
         if (Type == null)
