@@ -1,6 +1,9 @@
 # Zoo-Keeper
 CHANGELOG
 
+1.0.3 Third Beta
+	Back Button behavior fixed from 1.0.2 changes
+
 1.0.2 Second Beta
 	Minor display cleanups
 	Added Feedback Menu item
