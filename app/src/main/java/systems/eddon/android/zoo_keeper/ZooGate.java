@@ -280,10 +280,12 @@ public class ZooGate extends Activity
 
     public void restoreActionBar() {
         ActionBar actionBar = getActionBar();
-        actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
-        actionBar.setDisplayShowTitleEnabled(true);
-        actionBar.setDisplayUseLogoEnabled(true);
-        actionBar.setTitle(mTitle);
+        if (actionBar != null) {
+            actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_STANDARD);
+            actionBar.setDisplayShowTitleEnabled(true);
+            actionBar.setDisplayUseLogoEnabled(true);
+            actionBar.setTitle(mTitle);
+        }
     }
 
 
@@ -313,11 +315,17 @@ public class ZooGate extends Activity
             startActivityForResult(intent, 69);
             return true;
         }
-        if (id == R.id.action_help) {
+        else if (id == R.id.action_help) {
             Intent intent = new Intent(Intent.ACTION_VIEW);
             Uri uri = Uri.parse("https://eddon.systems/joomla/index.php/news-main/projects/zoo-keeper-app/31-zookeeper");
             intent.setData(uri);
             ZooGate.myActivity.startActivity(intent);
+        }
+        else if (id == R.id.action_feedback) {
+            Intent emailIntent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts(
+                    "mailto","evan+zookeeper@eddon.systems", null));
+            emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Zoo-Keeper Feedback");
+            startActivity(Intent.createChooser(emailIntent, "Send email..."));
         }
         return super.onOptionsItemSelected(item);
     }
@@ -348,9 +356,13 @@ public class ZooGate extends Activity
         @Override
         public boolean onKey(View v, int keyCode, KeyEvent event) {
             if (keyCode == KeyEvent.KEYCODE_BACK) {
-                ZooGate z = (ZooGate) ZooGate.myActivity;
-                z.onNavigationDrawerItemSelected(0);
-                return true;
+                if (ZooGate.myActivity.getLocalClassName().matches("Notify")) {
+                    ZooGate z = (ZooGate) ZooGate.myActivity;
+                    z.onNavigationDrawerItemSelected(0);
+                    return true;
+                } else {
+                    return false;
+                }
             }
 
             return false;
@@ -371,11 +383,16 @@ public class ZooGate extends Activity
                 if (!simple.exists()) {
                     try {
                         FileOutputStream write = new FileOutputStream(simple);
-                        StringBuffer sb = new StringBuffer();
-                        sb.append("0 3 * * *    run-parts /system/etc/cron.daily >>"+log+" 2>&1\n");
-                        sb.append("10 * * * *   run-parts /system/etc/cron.hourly >>"+log+" 2>&1\n");
-                        sb.append("20 4 * * 1   run-parts /system/etc/cron.weekly >>"+log+" 2>&1\n");
-                        sb.append("20 5 1 * *   run-parts /system/etc/cron.monthly >>"+log+" 2>&1\n");
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("0 3 * * *    run-parts /system/etc/cron.daily >>")
+                                .append(log)
+                        .append(" 2>&1\n10 * * * *   run-parts /system/etc/cron.hourly >>")
+                                .append(log)
+                        .append(" 2>&1\n20 4 * * 1   run-parts /system/etc/cron.weekly >>")
+                                .append(log)
+                        .append(" 2>&1\n20 5 1 * *   run-parts /system/etc/cron.monthly >>")
+                                .append(log)
+                        .append(" 2>&1\n");
                         write.write(sb.toString().getBytes(), 0, sb.length());
                         write.close();
                     }
@@ -387,10 +404,12 @@ public class ZooGate extends Activity
                 if (!update.exists()) {
                     try {
                         FileOutputStream write = new FileOutputStream(update);
-                        StringBuffer sb = new StringBuffer();
+                        StringBuilder sb = new StringBuilder();
                         sb.append("5 2 * * *    am startservice -n "+
-                        "\"systems.eddon.android.zoo_keeper/.NotifyDownloader\""+
-                                " --es Action Upgrade >>"+log+" 2>&1");
+                                "\"systems.eddon.android.zoo_keeper/.NotifyDownloader\""+
+                                " --es Action Upgrade >>")
+                        .append(log)
+                        .append(" 2>&1");
                         write.write(sb.toString().getBytes(), 0, sb.length());
                         write.close();
                     }
@@ -418,13 +437,13 @@ public class ZooGate extends Activity
         Log.d("writeCronTab", "master file is " + master.getAbsolutePath());
         try {
             FileOutputStream write = new FileOutputStream(master);
-            StringBuffer sb = new StringBuffer();
-            sb.append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/Cron/simple").trim());
-            sb.append("\n");
-            sb.append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/Cron/systemupdate").trim());
-            sb.append("\n");
-            sb.append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/Cron/advanced").trim());
-            sb.append("\n");
+            StringBuilder sb = new StringBuilder();
+            sb.append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/Cron/simple").trim())
+                    .append("\n")
+                    .append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/Cron/systemupdate").trim())
+                    .append("\n")
+                    .append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/Cron/advanced").trim())
+                    .append("\n");
             write.write(sb.toString().getBytes(), 0, sb.length());
             write.close();
             forceCron();
@@ -437,7 +456,7 @@ public class ZooGate extends Activity
     public static String readFile(String file) {
         try {
             BufferedReader reader = new BufferedReader(new FileReader(file));
-            String line = null;
+            String line;
             StringBuilder stringBuilder = new StringBuilder();
             String ls = System.getProperty("line.separator");
 
@@ -463,7 +482,9 @@ public class ZooGate extends Activity
 
             while ((count < 5) && (reader.available() <= 0)) {
                 count++;
-                try { Thread.sleep(200); } catch(Exception ex) {}
+                try { Thread.sleep(200); } catch(Exception ex) {
+                    Log.d("readStream", ex.getLocalizedMessage());
+                }
             }
 
             while(reader.available() > 0) {
@@ -507,10 +528,8 @@ public class ZooGate extends Activity
             FileOutputStream out = new FileOutputStream(outFile);
             copyFile(in, out);
             in.close();
-            in = null;
             out.flush();
             out.close();
-            out = null;
             runShellCommand("/system/bin/chmod 755 " + directory.getAbsolutePath() + "/" + destination);
         } catch(IOException e) {
             Log.e("copyAsset", "Failed to copy asset file: " + filename, e);
@@ -567,7 +586,7 @@ public class ZooGate extends Activity
                     new InputStreamReader(p.getInputStream()));
             int exit = p.waitFor();
             int read;
-            StringBuffer output = new StringBuffer();
+            StringBuilder output = new StringBuilder();
             while ((read = reader.read(buffer)) > 0) {
                 output.append(buffer, 0, read);
             }
@@ -654,9 +673,7 @@ public class ZooGate extends Activity
     }
 
     public static void rebootRecovery() {
-        StringBuilder sb = new StringBuilder();
-        sb.append ("su -c reboot recovery");
-        runShellCommand(sb.toString());
+        runShellCommand("su -c reboot recovery");
     }
 
 }
