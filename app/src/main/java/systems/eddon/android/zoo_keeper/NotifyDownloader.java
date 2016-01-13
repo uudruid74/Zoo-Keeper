@@ -215,10 +215,9 @@ public class NotifyDownloader extends IntentService {
             final String newRel = ZooGate.readStream(in).trim();
             final String filename = "Update-"+oldRel+"-to-"+newRel+".zip";
             Log.d("PREF_FILE_ROM_NEXT", "Need to fetch " + filename);
+            DownloadFileList.add(filename);
             if (sp.getBoolean(ZooGate.PREF_USER_DOWNLOAD, true)
                         || sp.getBoolean(ZooGate.PREF_CHOICE_DOWNLOAD, true)) {
-                DownloadFileSet.add(filename);
-                DownloadFileList.add(filename);
                 startDownloadRom(filename);
             }
             // If chain not complete
@@ -329,12 +328,15 @@ public class NotifyDownloader extends IntentService {
         Runnable updateRecoveryScript = new Runnable() {
             @Override
             public void run() {
-                ZooGate.writeRootFile(ZooGate.RECOVERY_SCRIPT, "mount /data\n");
+                Log.d("updateRecoveryScript", "Recovery will flash " + DownloadFileList.size() + " files");
+                StringBuilder sb = new StringBuilder(); // ZooGate.RECOVERY_SCRIPT
+                sb.append("mount /data\n");
                 for (String filename: DownloadFileList) {
-                    ZooGate.appendRootFile(ZooGate.RECOVERY_SCRIPT, "install " +
+                    Log.d("updateRecoveryScript", "install "+filename);
+                    sb.append("install " +
                             ZooGate.ACTUAL_SD_STORAGE + ZooGate.USER_DIR + filename + "\n");
                 }
-                ZooGate.appendRootFile(ZooGate.RECOVERY_SCRIPT, "umount /data\n"
+                sb.append("umount /data\n"
                     + "cmd rm " + ZooGate.RECOVERY_SCRIPT + "\n"
                     + "cmd rm /cache/recovery/command\n"
                 //    + "wipe cache\n"
@@ -342,9 +344,9 @@ public class NotifyDownloader extends IntentService {
 
                 // If doing something weird, wipe cache and dalvik-cache
                 if (!ZooGate.releaseName.equals(ZooGate.readFile("/system/etc/release"))) {
-                    ZooGate.appendRootFile (ZooGate.RECOVERY_SCRIPT, "wipe cache\nwipe dalvik\n");
+                    sb.append("wipe cache\nwipe dalvik\n");
                 }
-
+                ZooGate.writeRootFile(ZooGate.RECOVERY_SCRIPT, sb.toString());
                 if (sp.getBoolean(ZooGate.PREF_UPDATE_AUTOREBOOT, false)) {
                     ZooGate.rebootRecovery();
                 } else {
@@ -353,7 +355,7 @@ public class NotifyDownloader extends IntentService {
             }
         };
 
-        if (!DownloadFileList.isEmpty() && SuccessCount > 0 && FailureCount == 0) {
+        if ((!DownloadFileList.isEmpty()) && (SuccessCount > 0) && (FailureCount == 0)) {
             if (sp.getBoolean(ZooGate.PREF_UPDATE_RECOVERY, true)) {
                 new Thread(updateRecoveryScript).start();
             } else {
@@ -389,7 +391,7 @@ public class NotifyDownloader extends IntentService {
         // FIXME: Should we check for dup filenames?
         if (((DownloadFileSet != null) && DownloadFileSet.contains(filename)) ||
                     ((DownloadFileList != null) && (DownloadFileList.contains(filename)))) {
-            Log.d("enqueueDownload", filename + "already pending");
+            Log.d("enqueueDownload", filename + " already pending");
         }
         /**
          * This bit is to fake success when file already exists
@@ -419,6 +421,8 @@ public class NotifyDownloader extends IntentService {
             Visible = DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED;
 
         Log.d("enqueueDownload", extra_action + " Description: " + description + " to " +ZooGate.USER_DIR + filename );
+        DownloadFileSet.add(filename);
+        DownloadFileList.add(filename);
         IdToPREF.put(dm.enqueue(new DownloadManager.Request(thisUri)
                         .setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI |
                                 DownloadManager.Request.NETWORK_MOBILE)
@@ -442,10 +446,10 @@ public class NotifyDownloader extends IntentService {
         notificationCreate(getString(R.string.new_rom_available), R.drawable.ic_cloud_avail, 02);
     }
     private void notifyRebootReady() {
-        notificationCreate("ROM Ready to Install!", R.drawable.ic_cloud_avail, 03);
+        notificationCreate("A New ROM Ready to Install!", R.drawable.ic_cloud_avail, 02);
     }
     private void notifySafetyFailure() {
-        notificationCreate("Safety checks failed.  Recovery untouched.", R.drawable.ic_stop, 04);
+        notificationCreate("Safety checks failed.  Recovery untouched.  S:"+SuccessCount+" F:"+FailureCount, R.drawable.ic_stop, 04);
     }
     private void notificationCreate(String Message, int icon, int mNotificationId) {
         Log.d("notificationCreate", "String: " + Message);

@@ -630,23 +630,6 @@ public class ZooGate extends Activity
         new Thread(thread).start();
     }
 
-    public static void appendRootFile(String filename, String content) {
-        Process p;
-        Log.d("appendRootFile", filename + " length: " + content.length());
-        try {
-            p = Runtime.getRuntime().exec("su -c cat >>"+filename);
-            OutputStream os = p.getOutputStream();
-            os.write(content.getBytes());
-            os.flush();
-            os.close();
-            p.waitFor();
-        }
-        catch (Exception e)
-        {
-            Log.e("appendRootFile", e.getLocalizedMessage());
-        }
-    }
-
     public static void runLocalRootCommand(final String command) {
         runLocalRootCommand2(command, null);
     }
