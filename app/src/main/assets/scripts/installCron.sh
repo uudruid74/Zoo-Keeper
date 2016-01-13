@@ -25,7 +25,9 @@ for DIR in $SUBDIRS; do
 #
 # This is a simple shell script, just add your own commands!
 #
+date
 ZooToast "Running $DIR crontab"
+echo
 
 EOH
     else
@@ -34,7 +36,9 @@ EOH
 #
 # This is a simple shell script, just add your own commands!
 #
+date
 ZooNotify "Running $DIR crontab" "file:///sdcard/Cron/cronlog.txt"
+echo
 
 EOL
     fi
