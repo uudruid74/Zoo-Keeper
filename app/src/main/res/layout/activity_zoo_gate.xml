@@ -4,9 +4,10 @@
     android:layout_width="match_parent" android:layout_height="match_parent"
     tools:context=".ZooGate"
     android:background="@drawable/current_release"
-    android:backgroundTint="#60FFFFFF"
     android:backgroundTintMode="multiply"
-    android:clickable="false">
+    android:clickable="true"
+    android:backgroundTint="#44ffffff"
+    android:alpha="1">
 
     <!-- As the main content view, the view below consumes the entire
          space available using match_parent in both dimensions. -->

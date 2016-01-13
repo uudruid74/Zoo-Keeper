@@ -133,7 +133,7 @@ public class ZooGate extends Activity
     public static final String PREF_CHOICE_DOWNLOAD     = "download_override";
     public static final String PREF_FORCE_VERSION       = "force_version";
     public static final String PREF_ALLOW_METERED       = "allow_metered";
-
+    public static final String PREF_ALWAYS_NOTIFY       = "always_notify";
     public static final String ARG_SECTION_NUMBER       = "section_number";
 
 

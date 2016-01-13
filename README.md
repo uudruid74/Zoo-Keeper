@@ -1,6 +1,10 @@
 # Zoo-Keeper
 CHANGELOG
 
+1.0.4 Open Beta
+	Switch (in Settings) to notify if no updates available (vs small toast)
+	Lighter background images for easier readability
+
 1.0.3 Third Beta
 	Back Button behavior fixed from 1.0.2 changes
 

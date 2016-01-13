@@ -168,7 +168,11 @@ public class NotifyDownloader extends IntentService {
                     startDownloadChain();
                 }
             } else {
-                ZooGate.popupMessage("Sorry, try again tomorrow!");
+                if (ZooGate.sp.getBoolean(ZooGate.PREF_ALWAYS_NOTIFY, false)) {
+                    notifyNothingNew();
+                } else {
+                    ZooGate.popupMessage("Sorry, try again tomorrow!");
+                }
             }
             // Determine if "available" image icon needs updating
             if (!nextRel.equals(sp.getString(ZooGate.PREF_LAST_IMAGE_NAME,"Aardvark"))) {
@@ -443,13 +447,16 @@ public class NotifyDownloader extends IntentService {
         notificationCreate("Download Failure of " + FailureCount + " files!", R.drawable.ic_fail, 01);
     }
     private void notifyDownloadAvail() {
-        notificationCreate(getString(R.string.new_rom_available), R.drawable.ic_cloud_avail, 02);
+        notificationCreate(getString(R.string.new_rom_available), R.drawable.ic_cloud_avail, 01);
     }
     private void notifyRebootReady() {
-        notificationCreate("A New ROM Ready to Install!", R.drawable.ic_cloud_avail, 02);
+        notificationCreate("A New ROM Ready to Install!", R.drawable.ic_cloud_avail, 01);
     }
     private void notifySafetyFailure() {
         notificationCreate("Safety checks failed.  Recovery untouched.  S:"+SuccessCount+" F:"+FailureCount, R.drawable.ic_stop, 04);
+    }
+    private void notifyNothingNew() {
+        notificationCreate("I checked for updates.  Nothing new yet!", R.drawable.ic_clock, 01);
     }
     private void notificationCreate(String Message, int icon, int mNotificationId) {
         Log.d("notificationCreate", "String: " + Message);

@@ -7,7 +7,7 @@ android {
         applicationId "systems.eddon.android.zoo_keeper"
         minSdkVersion 22
         targetSdkVersion 22
-        versionCode 3
+        versionCode 4
         versionName "1.0"
     }
     buildTypes {

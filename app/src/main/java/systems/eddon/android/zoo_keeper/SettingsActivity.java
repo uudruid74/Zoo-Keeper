@@ -12,6 +12,7 @@ public class SettingsActivity extends Activity {
     TextView    Mirror;
     TextView    Directory;
     Switch      AllowMetered;
+    Switch      AlwaysNotify;
 
     TextView    Release;
     TextView    GpsNtp;
@@ -29,6 +30,8 @@ public class SettingsActivity extends Activity {
         Directory.setText(ZooGate.sp.getString(ZooGate.PREF_DOWNLOAD_DIR, ZooGate.DEF_DOWNLOAD));
         AllowMetered = (Switch) findViewById(R.id.metered_downloads);
         AllowMetered.setChecked(ZooGate.sp.getBoolean(ZooGate.PREF_ALLOW_METERED, false));
+        AlwaysNotify = (Switch) findViewById(R.id.notify_on_nothing);
+        AlwaysNotify.setChecked(ZooGate.sp.getBoolean(ZooGate.PREF_ALWAYS_NOTIFY, false));
         Release = (TextView) findViewById(R.id.force_text);
         GpsNtp = (TextView) findViewById(R.id.gps_ntp_text);
         if (!CurrentGps.equals(getString(R.string.default_ntp_server))) {
@@ -60,8 +63,9 @@ public class SettingsActivity extends Activity {
         ZooGate.DOWNLOAD_DIR = ZooGate.SDCARD_DIR + ZooGate.USER_DIR;
         ZooGate.INSTALL_DIR = ZooGate.ACTUAL_SD_STORAGE + ZooGate.USER_DIR;
 
-        // Metered Switch
+        // Switches
         edit.putBoolean(ZooGate.PREF_ALLOW_METERED, AllowMetered.isChecked());
+        edit.putBoolean(ZooGate.PREF_ALWAYS_NOTIFY, AlwaysNotify.isChecked());
 
         // Force current release
         if (Release.getText().toString().trim().length() > 2) {
