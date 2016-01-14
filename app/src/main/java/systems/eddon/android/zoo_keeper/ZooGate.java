@@ -329,6 +329,11 @@ public class ZooGate extends Activity
             emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Zoo-Keeper Feedback");
             startActivity(Intent.createChooser(emailIntent, "Send email..."));
         }
+        else if (id == R.id.action_advanced_menu) {
+            Intent intent = new Intent(this, AdvancedTools.class);
+            startActivity(intent);
+            return true;
+        }
         return super.onOptionsItemSelected(item);
     }
 

@@ -4,6 +4,8 @@
         android:showAsAction="withText|ifRoom" />
     <item android:id="@+id/action_settings" android:title="@string/action_settings"
         android:orderInCategory="100" android:showAsAction="never" />
+    <item android:id="@+id/action_advanced_menu" android:title="@string/action_advanced_menu"
+        android:orderInCategory="300" android:showAsAction="never" />
     <item android:id="@+id/action_feedback" android:title="@string/action_feedback"
         android:orderInCategory="400" android:showAsAction="never" />
     <item android:id="@+id/action_help" android:title="@string/action_help"
