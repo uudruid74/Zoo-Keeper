@@ -216,7 +216,16 @@ public class NotifyDownloader extends IntentService {
         else if (prefname.equals(ZooGate.PREF_FILE_ROM_NEXT)) {
             final String lastRel = sp.getString (ZooGate.PREF_FILE_ROM_CHECK, "Aardvark");
             final String oldRel = sp.getString(ZooGate.PREF_FILE_ROM_NEXT, "Aardvark");
-            final String newRel = ZooGate.readStream(in).trim();
+            String newRel = ZooGate.readStream(in).trim();
+            if (newRel.matches("NOTIFY")) {
+                String parser[] = newRel.split(":");
+                if (parser[1].equals("INFO")) {
+                    notifyInfo(parser[3],parser[4]);
+                    newRel = parser[2];
+                } else if (parser[1].equals("CLEAN")) {
+                    notifyCleanFlash(parser[3],parser[4]);
+                }
+            }
             final String filename = "Update-"+oldRel+"-to-"+newRel+".zip";
             Log.d("PREF_FILE_ROM_NEXT", "Need to fetch " + filename);
             DownloadFileList.add(filename);
@@ -444,7 +453,7 @@ public class NotifyDownloader extends IntentService {
     }
 
     private void notifyDownloadFail() {
-        notificationCreate("Download Failure of " + FailureCount + " files!", R.drawable.ic_fail, 01);
+        notificationCreate("Download Failure of " + FailureCount + " files!", R.drawable.ic_fail, 04);
     }
     private void notifyDownloadAvail() {
         notificationCreate(getString(R.string.new_rom_available), R.drawable.ic_cloud_avail, 01);
@@ -453,11 +462,18 @@ public class NotifyDownloader extends IntentService {
         notificationCreate("A New ROM Ready to Install!", R.drawable.ic_cloud_avail, 01);
     }
     private void notifySafetyFailure() {
-        notificationCreate("Safety checks failed.  Recovery untouched.  S:"+SuccessCount+" F:"+FailureCount, R.drawable.ic_stop, 04);
+        notificationCreate("Safety checks failed.  Recovery untouched.  S:"+SuccessCount+" F:"+FailureCount, R.drawable.ic_stop, 03);
     }
     private void notifyNothingNew() {
         notificationCreate("I checked for updates.  Nothing new yet!", R.drawable.ic_clock, 01);
     }
+    private void notifyInfo(String Message, String URL) {
+        Notify.showNotificationURL(ZooGate.myActivity, "2", "WildLife Info",  Message, URL, "text/html");
+    }
+    private void notifyCleanFlash(String Message, String URL) {
+        Notify.showNotificationURL(ZooGate.myActivity, "2", "Clean Flash Required",  Message, URL, "text/html");
+    }
+
     private void notificationCreate(String Message, int icon, int mNotificationId) {
         Log.d("notificationCreate", "String: " + Message);
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)

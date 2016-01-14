@@ -83,6 +83,8 @@ public class ZooGate extends Activity
     public static final String EXTRA_DESCR      = "Description";
     public static final String EXTRA_TYPE       = "Type";
     public static final String ACTION_UPGRADE   = "Upgrade";
+    public static final String EXTRA_PID        = "PID";
+    public static final String EXTRA_TITLE      = "Title";
 
     public static Handler handler;
     public static Activity myActivity;
@@ -372,7 +374,7 @@ public class ZooGate extends Activity
     public static void installCron() {
         Runnable part2 = new Runnable() {
             public void run() {
-                File crondir = new File(ZooGate.SDCARD_DIR + "/Cron/");
+                File crondir = new File(ZooGate.SDCARD_DIR + "/ZooKeeper/Cron/");
                 String log = crondir.getAbsolutePath() + "/cronlog.txt";
 
                 if (!crondir.exists()) {
@@ -431,18 +433,18 @@ public class ZooGate extends Activity
 
     public static void writeCronTab() {
         Log.d("writeCrontab","Starting updates and refreshing cron!");
-        File crondir = new File(ZooGate.SDCARD_DIR + "/Cron/");
+        File crondir = new File(ZooGate.SDCARD_DIR + "/ZooKeeper/Cron/");
         writeRootFile("/system/etc/timezone", CronManagerFragment.findTZS());
         File master = new File(crondir,"master");
         Log.d("writeCronTab", "master file is " + master.getAbsolutePath());
         try {
             FileOutputStream write = new FileOutputStream(master);
             StringBuilder sb = new StringBuilder();
-            sb.append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/Cron/simple").trim())
+            sb.append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/ZooKeeper/Cron/simple").trim())
                     .append("\n")
-                    .append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/Cron/systemupdate").trim())
+                    .append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/ZooKeeper/Cron/systemupdate").trim())
                     .append("\n")
-                    .append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/Cron/advanced").trim())
+                    .append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/ZooKeeper/Cron/advanced").trim())
                     .append("\n");
             write.write(sb.toString().getBytes(), 0, sb.length());
             write.close();
@@ -469,7 +471,7 @@ public class ZooGate extends Activity
         }
         catch (Exception e)
         {
-            Log.e("readFile", file + " - " + e.getLocalizedMessage() );
+            Log.e("readFile", file + " - " + e.getLocalizedMessage());
             return "";          // must stay NULL
         }
     }
@@ -577,28 +579,47 @@ public class ZooGate extends Activity
     }
 
     public static String readShellCommand(final String command) {
-        Log.d("readShellCommand", command);
-        try {
-            int BUFF_LEN = 4096;
-            Process p = Runtime.getRuntime().exec(command);
-            char[] buffer = new char[BUFF_LEN];
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(p.getInputStream()));
-            int exit = p.waitFor();
-            int read;
-            StringBuilder output = new StringBuilder();
-            while ((read = reader.read(buffer)) > 0) {
-                output.append(buffer, 0, read);
-            }
-            reader.close();
+        return readShellCommandNotify("0", command);
+    }
 
-            Log.d("readShellCommand", "exit: " + exit + " returned: " + output);
-            return output.toString();
+    public static String readShellCommandNotify(final String id, final String command) {
+        final int idvalue = Integer.valueOf(id);
+        final StringBuilder output = new StringBuilder();
+        Log.d("readShellCommand", command);
+        Runnable shellprocess = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    int BUFF_LEN = 4096;
+                    Process p = Runtime.getRuntime().exec(command);
+                    char[] buffer = new char[BUFF_LEN];
+                    BufferedReader reader = new BufferedReader(
+                            new InputStreamReader(p.getInputStream()));
+                    int exit = p.waitFor();
+                    int read;
+                    StringBuilder output = new StringBuilder();
+                    while ((read = reader.read(buffer)) > 0) {
+                        output.append(buffer, 0, read);
+                        if (idvalue > 0)
+                            Notify.showNotificationURL(ZooGate.myActivity, id, command,
+                                    buffer.toString(), null, "text/html");
+
+                    }
+                    reader.close();
+
+                    Log.d("readShellCommand", "exit: " + exit + " returned: " + output);
+                } catch (Exception e) {
+                    Log.e("readShellCommand", e.getLocalizedMessage());
+                }
+            }
+        };
+        if (idvalue > 0) {
+            new Thread(shellprocess).start();
+            return command;
         }
-        catch (Exception e)
-        {
-            Log.e("readShellCommand", e.getLocalizedMessage());
-            return "";
+        else {
+            shellprocess.run();
+            return output.toString();
         }
     }
 

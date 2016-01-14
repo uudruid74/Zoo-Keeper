@@ -189,7 +189,7 @@ public class CronManagerFragment extends Fragment {
         clearlogbutton.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                ZooGate.writeRootFile("/sdcard/Cron/cronlog.txt","");
+                ZooGate.writeRootFile("/sdcard/ZooKeeper/Cron/cronlog.txt","");
                 ZooGate.popupMessage("Log File Cleared!");
                 return true;
             }
@@ -218,7 +218,7 @@ public class CronManagerFragment extends Fragment {
         return "UTC";
     }
     private void editFile(String period) {
-        File log = new File(ZooGate.ACTUAL_SD_STORAGE + "/Cron/"+period);
+        File log = new File(ZooGate.ACTUAL_SD_STORAGE + "/ZooKeeper/Cron/"+period);
         Log.d("editFile", log.getAbsolutePath());
         Intent intent = new Intent(Intent.ACTION_EDIT);
         Uri uri = Uri.fromFile(log);
@@ -226,7 +226,7 @@ public class CronManagerFragment extends Fragment {
         ZooGate.myActivity.startActivity(intent);
     }
     private void viewFile(String period) {
-        File log = new File(ZooGate.ACTUAL_SD_STORAGE + "/Cron/"+period);
+        File log = new File(ZooGate.ACTUAL_SD_STORAGE + "/ZooKeeper/Cron/"+period);
         Log.d("editFile", log.getAbsolutePath());
         Intent intent = new Intent(Intent.ACTION_VIEW);
         Uri uri = Uri.fromFile(log);
@@ -235,7 +235,7 @@ public class CronManagerFragment extends Fragment {
     }
 
     public void updateCrontab() {
-        File crondir = new File(ZooGate.ACTUAL_SD_STORAGE + "/Cron/");
+        File crondir = new File(ZooGate.ACTUAL_SD_STORAGE + "/ZooKeeper/Cron/");
         String log = crondir.getAbsolutePath() + "/cronlog.txt";
         File master = new File(crondir,"simple");
         Log.d("updatecrontab", "simple file is " + master.getAbsolutePath());

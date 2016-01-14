@@ -229,7 +229,7 @@ public class UpdateManagerFragment extends Fragment {
 
     private void updateChronData() {
         Log.d("updateCronData","SystmUpdate Change");
-        File crondir = new File(ZooGate.ACTUAL_SD_STORAGE + "/Cron/");
+        File crondir = new File(ZooGate.ACTUAL_SD_STORAGE + "/ZooKeeper/Cron/");
         String log = crondir.getAbsolutePath() + "/cronlog.txt";
 
         File update = new File(crondir,"systemupdate");

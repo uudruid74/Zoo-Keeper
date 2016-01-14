@@ -5,14 +5,14 @@
 # The "root" crontab is the "master" file, created dynamically and
 # then the user's "advanced" additions (if any) are appended.
 #
-USERDIR="/data/media/0/Cron"
+USERDIR="/data/media/0/ZooKeeper/Cron"
 SUBDIRS="hourly daily weekly monthly"
 mount -o remount,rw /system
 echo "root:x:0:0::/system/etc/crontabs:/system/bin/sh" > /system/etc/passwd
 mkdir /system/etc/crontabs
 chown root.root /system/etc/crontabs
 chmod 775 /system/etc/crontabs
-mkdir $USERDIR
+mkdir -p $USERDIR
 chown root.root $USERDIR
 chmod 777 $USERDIR
 for DIR in $SUBDIRS; do
@@ -37,7 +37,7 @@ EOH
 # This is a simple shell script, just add your own commands!
 #
 date
-ZooNotify "Running $DIR crontab" "file:///sdcard/Cron/cronlog.txt"
+ZooNotify "Running $DIR crontab" "file:///sdcard/ZooKeeper/Cron/cronlog.txt"
 echo
 
 EOL
@@ -94,9 +94,9 @@ if [ -z "$URL" ]; then
 fi
 
 if [ -z "$3" ]; then
-    am startservice -n "systems.eddon.android.zoo_keeper/.Notify" --es Message "$MESSAGE" --es URL "$URL"
+    am startservice -n "systems.eddon.android.zoo_keeper/.Notify" --es Message "$MESSAGE" --es Title $0 --es PID $$ --es URL "$URL"
 else
-    am startservice -n "systems.eddon.android.zoo_keeper/.Notify" --es Message "$MESSAGE" --es URL "$URL" --es Type "$TYPE"
+    am startservice -n "systems.eddon.android.zoo_keeper/.Notify" --es Message "$MESSAGE" --es Title $0 --es PID $$ --es URL "$URL" --es Type "$TYPE"
 fi
 echo "$MESSAGE"
 
@@ -137,11 +137,11 @@ fi
 TZ=`cat /system/etc/timezone`
 export TZ
 
-CRONSTOP="/storage/emulated/0/Cron/.cronstop"
-USERDIR="/data/media/0/Cron"
+CRONSTOP="/storage/emulated/0/ZooKeeper/Cron/.cronstop"
+USERDIR="/data/media/0/ZooKeeper/Cron"
 CRONDIR="/system/etc/crontabs"
 # OPTS=`cat /system/etc/cronopts`
-OPTS="-L /storage/emulated/0/Cron/cronlog.txt"
+OPTS="-L /storage/emulated/0/ZooKeeper/Cron/cronlog.txt"
 
 #
 # Now the actual service start
@@ -184,4 +184,101 @@ EOCD
 
 chmod 775 /system/etc/init.d/20crond
 chown root.root /system/etc/init.d/20crond
+
+# This part is for backups
+cat >/sdcard/ZooKeeper/backup.sh <<EOBACKUP
+#!/system/xbin/sh
+#
+# Backup Script
+# /sdcard/ZooKeeper/backup.sh
+# - the backup control script
+#
+
+PATH="/system/xbin:$PATH"
+export PATH
+if [ ! -d "/sdcard/ZooKeeper/snapshot" ]; then
+        mkdir /sdcard/ZooKeeper/snapshot
+fi
+cd /sdcard/ZooKeeper
+echo "Starting Backup!"
+find /data/app -print | grep -F 'base.apk' | xargs -n 1 /data/media/0/ZooKeeper/cpAPK.sh
+echo
+echo "Backing Up Extra Files ..."
+tar -cpJ -f /sdcard/ZooKeeper/app-lib.tar.xz /data/app-lib 2>/dev/null
+tar -cpJ -f /sdcard/ZooKeeper/app-private.tar.xz /data/app-private 2>/dev/null
+echo "Backup Complete!"
+
+EOBACKUP
+chmod 777 /data/media/0/ZooKeeper/backup.sh
+
+cat >/sdcard/ZooKeeper/cpAPK.sh <<EOCPAK
+#!/system/xbin/sh
+#
+# CpAPK
+# /sdcard/ZooKeeper/cpAPK.sh
+# - backs up one APK w/data
+#
+
+APK=$1
+NAME=`echo $1 | cut -d '/' -f 4`
+NEWN=`echo $NAME | cut -d '-' -f 1`
+if [ ! -d "/sdcard/ZooKeeper/snapshot/$NEWN" ]; then
+        mkdir /sdcard/ZooKeeper/snapshot/$NEWN
+fi
+echo "$NEWN"
+tar -cpJ -f /sdcard/ZooKeeper/snapshot/$NEWN/$NEWN.apk.tar.bz2 $APK 2>/dev/null
+tar -cpJ -f /sdcard/ZooKeeper/snapshot/$NEWN/$NEWN.data.tar.bz2 /data/data/$NEWN 2>/dev/null
+
+EOCPAK
+chmod 777 /data/media/0/ZooBackup/cpAPK.sh
+
+cat >/sdcard/ZooKeeper/restore.sh <<EOR
+#!/system/xbin/sh
+#
+# restore.sh
+# /sdcard/ZooKeeper/restore.sh
+# - run to restore all backups
+#
+
+APP=$1
+DIR="/sdcard/ZooKeeper/snapshot"
+
+if [ -z "$APP" ]; then
+        APP="*"
+        echo "Restoring all apps .. this will take time!"
+else
+        if [ -d "${DIR}/${APP}" ]; then
+                echo "Restoring $APP"
+        else
+                echo "No such app as $APP"
+                exit 1
+        fi
+fi
+PATH="/system/xbin:$PATH"
+export PATH
+cd "$DIR"
+for dir in `echo $APP`; do
+        cd "${DIR}/${dir}"
+        OUT=`tar -vxf "${DIR}/${dir}/${dir}.apk.tar.bz2"`
+        RESULT=`pm install -rd "${DIR}/${dir}/$OUT" 2>&1`
+        UID_CHANGE=`echo $RESULT | grep UID_CHANGED`
+        if [ ! -z "$UID_CHANGE" ]; then
+                echo UID_CHANGED
+                rm -rf /data/data/$APP*
+                pm install -rf "${DIR}/${dir}/$OUT"
+        else
+                echo $APP - $RESULT
+        fi
+        rm -rf data
+        cd /
+        USERID=`dumpsys package $APP | grep userId= | sed -Er 's/.*userId=([0-9]+) .*/\1/'`
+        tar -xf "/sdcard/ZooKeeper/snapshot/${dir}/${dir}.data.tar.bz2"
+        chown -R ${USERID}:${USERID} /data/data/$APP*
+done
+echo
+echo "Restore Complete!"
+
+EOR
+chmod 777 /data/media/0/ZooKeeper/restore.sh
+
 mount -o remount,ro /system
