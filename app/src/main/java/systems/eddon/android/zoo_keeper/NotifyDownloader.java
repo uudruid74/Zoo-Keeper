@@ -41,14 +41,14 @@ public class NotifyDownloader extends IntentService {
     private String url;
     private String extra_action;
     private String description;
-    private static boolean unregistered = true;
+    public static boolean unregistered = true;
 
     public static DownloadManager dm;
     public static SharedPreferences sp;
 
     private static HashMap<Long,String>    IdToPREF = new HashMap();
-    private static HashSet<String>         DownloadFileSet;     // Pending set
-    private static ArrayList<String>       DownloadFileList;    // Complete
+    private static HashSet<String>         DownloadFileSet= new HashSet();      // Pending set
+    private static ArrayList<String>       DownloadFileList = new ArrayList();  // Complete
 
     private static int      SuccessCount = 0;
     private static int      FailureCount = 0;
@@ -58,50 +58,63 @@ public class NotifyDownloader extends IntentService {
     }
 
     // match download ID to extra_actions
-    final BroadcastReceiver receiver = new BroadcastReceiver() {
+    public final BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(action)) {
+            Log.d("BroadCastReceiver",action);
+            if (action == DownloadManager.ACTION_DOWNLOAD_COMPLETE) {
                 long downloadId = intent.getLongExtra(
                         DownloadManager.EXTRA_DOWNLOAD_ID, 0);
-                if (!IdToPREF.containsKey(downloadId))
-                    return;
-                Log.d("onReceive", "Download OK.  ID=" + downloadId);
-                DownloadManager.Query query = new DownloadManager.Query();
-                //query.setFilterById(enqueue);
-                Cursor c = dm.query(query);
-                if (c.moveToFirst()) {
-                    int status = c.getInt(c.getColumnIndex(DownloadManager.COLUMN_STATUS));
-                    Log.d("DM Sample", "Status Check: " + status);
-                    switch (status) {
-                        case DownloadManager.STATUS_PAUSED:
-                        case DownloadManager.STATUS_PENDING:
-                        case DownloadManager.STATUS_RUNNING:
-                            break;
-                        case DownloadManager.STATUS_SUCCESSFUL:
-                            try {
-                                ParcelFileDescriptor file = dm.openDownloadedFile(downloadId);
-                                FileInputStream fis = new ParcelFileDescriptor.AutoCloseInputStream(file);
-                                fileSuccessful(downloadId, fis);
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                            break;
-                        case DownloadManager.STATUS_FAILED:
-                            FailureCount++;
-                            ZooGate.popupMessage("FAIL! Can't download this url:\n" +
-                                c.getString(c.getColumnIndex(DownloadManager.COLUMN_URI)));
-                            notifyDownloadFail();
-                            break;
-                    }
-                }
-                c.close();
-                IdToPREF.remove(downloadId);
-                // If Empty, wait 5s and enable Check?, unregister receiver?
+                checkDownloadStatus(downloadId);
             }
         }
     };
+
+
+    private void checkDownloadStatus(long downloadId) {
+        if (!IdToPREF.containsKey(downloadId))
+            return;
+        Log.d("onReceive", "Download OK.  ID=" + downloadId);
+
+        DownloadManager.Query query = new DownloadManager.Query();
+        query.setFilterById(downloadId);
+        Cursor c = dm.query(query);
+        if (c.moveToFirst()) {
+            int columnIndex = c.getColumnIndex(DownloadManager.COLUMN_STATUS);
+            int status = c.getInt(columnIndex);
+            int columnReason = c.getColumnIndex(DownloadManager.COLUMN_REASON);
+            int reason = c.getInt(columnReason);
+            Log.d("DM Sample", "Status Check: " + status);
+            switch (status) {
+                case DownloadManager.STATUS_PAUSED:
+                case DownloadManager.STATUS_PENDING:
+                    notifyWaitingOnNetwork();
+                case DownloadManager.STATUS_RUNNING:
+                    break;
+                case DownloadManager.STATUS_SUCCESSFUL:
+                    try {
+                        ParcelFileDescriptor file = dm.openDownloadedFile(downloadId);
+                        FileInputStream fis = new ParcelFileDescriptor.AutoCloseInputStream(file);
+                        fileSuccessful(downloadId, fis);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case DownloadManager.STATUS_FAILED:
+                    FailureCount++;
+                    ZooGate.popupMessage("FAIL! Can't download this url:\n" +
+                            c.getString(c.getColumnIndex(DownloadManager.COLUMN_URI)));
+                    notifyDownloadFail();
+                    break;
+            }
+            c.close();
+            IdToPREF.remove(downloadId);
+            // If Empty, wait 5s and enable Check?, unregister receiver?
+        }
+    };
+
+
 
     @Override
     protected void onHandleIntent(Intent intent) {
@@ -181,6 +194,7 @@ public class NotifyDownloader extends IntentService {
         }
         // Updates "available" icon
         else if (prefname.equals(ZooGate.PREF_LAST_IMAGE_NAME)) {
+            Log.d("PREF_LAST_IMAGE_NAME", "Updating small image");
             if (ZooGate.sectionNumber == 1) {
                 final Bitmap image = BitmapFactory.decodeStream(in);
                 Runnable updateImage = new Runnable() {
@@ -196,6 +210,7 @@ public class NotifyDownloader extends IntentService {
         }
         // Updates "background" for current release
         else if (prefname.equals(ZooGate.PREF_CURR_IMAGE_NAME)) {
+            Log.d("PREF_CURR_IMAGE_NAME", "Updating background image");
             if ((ZooGate.myActivity != null) &&
                         (!ZooGate.myActivity.getClass().getSimpleName().equals("IntentService"))) {
                 final Bitmap image = BitmapFactory.decodeStream(in);
@@ -228,7 +243,7 @@ public class NotifyDownloader extends IntentService {
             }
             final String filename = "Update-"+oldRel+"-to-"+newRel+".zip";
             Log.d("PREF_FILE_ROM_NEXT", "Need to fetch " + filename);
-            DownloadFileList.add(filename);
+            // DownloadFileList.add(filename);
             if (sp.getBoolean(ZooGate.PREF_USER_DOWNLOAD, true)
                         || sp.getBoolean(ZooGate.PREF_CHOICE_DOWNLOAD, true)) {
                 startDownloadRom(filename);
@@ -375,6 +390,8 @@ public class NotifyDownloader extends IntentService {
                 notifyDownloadAvail();
             }
         } else {
+            if (DownloadFileList.isEmpty())
+                Log.d("startRecoveryUpdates", "List of files is empty");
             notifySafetyFailure();
         }
     }
@@ -402,15 +419,40 @@ public class NotifyDownloader extends IntentService {
         Log.d("enqueueDownload",  url + " to " + ZooGate.DOWNLOAD_DIR + " as " + absolutefilename);
 
         // FIXME: Should we check for dup filenames?
-        if (((DownloadFileSet != null) && DownloadFileSet.contains(filename)) ||
-                    ((DownloadFileList != null) && (DownloadFileList.contains(filename)))) {
-            Log.d("enqueueDownload", filename + " already pending");
+        if (((DownloadFileSet != null) && DownloadFileSet.contains(filename))) {
+            Log.d("enqueueDownload", filename + " already pending in FileSet");
         }
+        if ((DownloadFileList != null) && (DownloadFileList.contains(filename))) {
+            Log.d("enqueueDownload", filename + " already pending in FileList");
+        }
+        
+        // FIXME: Here is a great place to disable Check button
+        File downloaddir = new File(Environment.getExternalStorageDirectory()+ ZooGate.USER_DIR);
+        if (!downloaddir.exists())
+            downloaddir.mkdirs();
+
+        int Visible = DownloadManager.Request.VISIBILITY_VISIBLE;
+        if (filename.endsWith(".zip"))
+            Visible = DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED;
+
+        boolean allowDownload = true;
+        Log.d("enqueueDownload", "Testing filename for ending");
+        if (filename.endsWith(".zip")) {
+            DownloadFileList.add(filename);
+            Log.d("enqueuDownload", "Downloading ZIP file");
+            allowDownload = ZooGate.sp.getBoolean(ZooGate.PREF_ALLOW_METERED, false);
+            if (!allowDownload) {
+                Log.d("enqueueDownload", "Restricted to unmetered");
+            } else {
+                Log.d("enqueueDownload", "Download is Allowed");
+            }
+        }
+
         /**
          * This bit is to fake success when file already exists
          */
         if (new File(absolutefilename).exists()) {
-            Log.d("enqueueDownload","File exists - skipping!");
+            Log.d("enqueueDownload", "File exists - skipping!");
             long downloadId = 1000 + new Random().nextInt();
             IdToPREF.put(downloadId, extra_action);
             try {
@@ -424,32 +466,21 @@ public class NotifyDownloader extends IntentService {
             return;
         }
 
-        // FIXME: Here is a great place to disable Check button
-        File downloaddir = new File(Environment.getExternalStorageDirectory()+ ZooGate.USER_DIR);
-        if (!downloaddir.exists())
-            downloaddir.mkdirs();
-
-        int Visible = DownloadManager.Request.VISIBILITY_VISIBLE;
-        if (filename.endsWith(".zip"))
-            Visible = DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED;
-
         Log.d("enqueueDownload", extra_action + " Description: " + description + " to " +ZooGate.USER_DIR + filename );
         DownloadFileSet.add(filename);
-        DownloadFileList.add(filename);
-        IdToPREF.put(dm.enqueue(new DownloadManager.Request(thisUri)
+        //DownloadFileList.add(filename);
+        long id;
+        IdToPREF.put(id = dm.enqueue(new DownloadManager.Request(thisUri)
                         .setAllowedNetworkTypes(DownloadManager.Request.NETWORK_WIFI |
                                 DownloadManager.Request.NETWORK_MOBILE)
                         .setAllowedOverRoaming(false)
-                        .setAllowedOverMetered(
-                                ZooGate.sp.getBoolean(ZooGate.PREF_ALLOW_METERED, false) |
-                                extra_action.equals(ZooGate.PREF_LAST_IMAGE_NAME) |
-                                extra_action.equals(ZooGate.PREF_CURR_IMAGE_NAME) |
-                                        ZooGate.sp.getBoolean(ZooGate.PREF_CHOICE_DOWNLOAD, false))
+                        .setAllowedOverMetered(allowDownload)
                         .setTitle(getString(R.string.app_name) + ": " + filename)
                         .setDescription(description)
                         .setNotificationVisibility(Visible)
                         .setDestinationInExternalPublicDir(ZooGate.USER_DIR, filename)),
                 extra_action);
+        checkDownloadStatus(id);
     }
 
     private void notifyDownloadFail() {
@@ -472,6 +503,9 @@ public class NotifyDownloader extends IntentService {
     }
     private void notifyCleanFlash(String Message, String URL) {
         Notify.showNotificationURL(ZooGate.myActivity, "2", "Clean Flash Required",  Message, URL, "text/html");
+    }
+    private void notifyWaitingOnNetwork() {
+        notificationCreate("Waiting On Network.  Check WiFi!", R.drawable.ic_stop, 04);
     }
 
     private void notificationCreate(String Message, int icon, int mNotificationId) {

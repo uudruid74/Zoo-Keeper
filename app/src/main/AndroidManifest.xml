@@ -31,7 +31,9 @@
         <activity
             android:name=".SettingsActivity"
             android:screenOrientation="portrait"></activity>
-        <activity android:name=".AdvancedTools"></activity>
+        <activity android:name=".AdvancedTools"
+            android:screenOrientation="portrait"></activity>
+
     </application>
 
 </manifest>

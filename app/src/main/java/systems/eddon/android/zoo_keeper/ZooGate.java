@@ -3,12 +3,10 @@ package systems.eddon.android.zoo_keeper;
 import android.app.Activity;
 
 import android.app.ActionBar;
-import android.app.Application;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
@@ -16,36 +14,28 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.support.v4.widget.DrawerLayout;
-import android.widget.ArrayAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.util.Scanner;
 
 
 public class ZooGate extends Activity
@@ -54,37 +44,40 @@ public class ZooGate extends Activity
     /**
      * The URL name and other info to send to other activities via Intents
      */
-    public static final String WILDLIFE_MIRROR_DEFAULT  = "https://eddon.systems/Download/WildLife/";
-    public static final String ACTUAL_SD_STORAGE        = "/data/media/0";
-    public static final String RECOVERY_SCRIPT          = "/cache/recovery/openrecoveryscript";
-    public static final String DEF_DOWNLOAD             = "Download/OTA";
+    public static final String WILDLIFE_MIRROR_DEFAULT = "https://eddon.systems/Download/WildLife/";
+    public static final String ACTUAL_SD_STORAGE = "/data/media/0";
+    public static final String RECOVERY_SCRIPT = "/cache/recovery/openrecoveryscript";
+    public static final String DEF_DOWNLOAD = "Download/OTA";
 
-    public static       String WILDLIFE_MIRROR;
-    public static       String DOWNLOAD_DIR;
-    public static       String USER_DIR;
-    public static       String SDCARD_DIR;
-    public static       String INSTALL_DIR;
+    public static String WILDLIFE_MIRROR;
+    public static String DOWNLOAD_DIR;
+    public static String USER_DIR;
+    public static String SDCARD_DIR;
+    public static String INSTALL_DIR;
+    public static File   SDCARD_FILEDIR;
 
-    public static final String CURRENT_ROM      = "WL-current-rom";
-    public static final String ROM_UPDATE_URL   = "ROM/.meta/" + CURRENT_ROM;
-    public static final String ROM_UPDATE_INF   = "ROM/.meta/";     // append current
-    public static final String ROM_UPDATE_PRE   = "ROM/download/";  // append filename
-    public static final String ROM_IMAGE_URL    = "Images/";
+    public static final String CURRENT_ROM = "WL-current-rom";
+    public static final String ROM_UPDATE_URL = "ROM/.meta/" + CURRENT_ROM;
+    public static final String ROM_UPDATE_INF = "ROM/.meta/";     // append current
+    public static final String ROM_UPDATE_PRE = "ROM/download/";  // append filename
+    public static final String ROM_IMAGE_URL = "Images/";
 
-    public static String releaseName            = "Aardvark";    // getString is not static!
+    public static String releaseName = "Aardvark";    // getString is not static!
+    public static boolean cronlock = false;
 
-    /** These Intent data items use EXTRA_ACTION as the PREF that you want to
-     *  request.  The NotifyDownloader will repond by setting the preference item
-     *  to the data requested.
+    /**
+     * These Intent data items use EXTRA_ACTION as the PREF that you want to
+     * request.  The NotifyDownloader will repond by setting the preference item
+     * to the data requested.
      */
-    public static final String EXTRA_URL        = "URL";
-    public static final String EXTRA_MESSAGE    = "Message";
-    public static final String EXTRA_ACTION     = "Action";
-    public static final String EXTRA_DESCR      = "Description";
-    public static final String EXTRA_TYPE       = "Type";
-    public static final String ACTION_UPGRADE   = "Upgrade";
-    public static final String EXTRA_PID        = "PID";
-    public static final String EXTRA_TITLE      = "Title";
+    public static final String EXTRA_URL = "URL";
+    public static final String EXTRA_MESSAGE = "Message";
+    public static final String EXTRA_ACTION = "Action";
+    public static final String EXTRA_DESCR = "Description";
+    public static final String EXTRA_TYPE = "Type";
+    public static final String ACTION_UPGRADE = "Upgrade";
+    public static final String EXTRA_PID = "PID";
+    public static final String EXTRA_TITLE = "Title";
 
     public static Handler handler;
     public static Activity myActivity;
@@ -94,61 +87,59 @@ public class ZooGate extends Activity
      * Preferences
      */
     // the switch states
-    public static final String PREF_USER_BLOCK_ADS      = "ad_block_master_switch";
-    public static final String PREF_USER_AUTO_UPDATES   = "auto_update_master_switch";
-    public static final String PREF_USER_CRON_SERVICES  = "cron_services_master_switch";
+    public static final String PREF_USER_BLOCK_ADS = "ad_block_master_switch";
+    public static final String PREF_USER_AUTO_UPDATES = "auto_update_master_switch";
+    public static final String PREF_USER_CRON_SERVICES = "cron_services_master_switch";
     // Download on check if available
-    public static final String PREF_USER_DOWNLOAD       = "auto_download_switch";
+    public static final String PREF_USER_DOWNLOAD = "auto_download_switch";
     // Manage install script for recovery (and /etc/newrelease)
-    public static final String PREF_UPDATE_RECOVERY     = "update_recovery_script";
+    public static final String PREF_UPDATE_RECOVERY = "update_recovery_script";
     // NOTE: /etc/newrelease is written only after download complete and installer written
     // This is to facilitate alternate reboot strategies via other cron job
     // Auto reboot on completion
-    public static final String PREF_UPDATE_AUTOREBOOT   = "update_auto_reboot";
+    public static final String PREF_UPDATE_AUTOREBOOT = "update_auto_reboot";
 
     // User readable string to convert into chron time
-    public static final String PREF_UPDATE_TIME         = "update_chron_time";
+    public static final String PREF_UPDATE_TIME = "update_chron_time";
     // Date of last check
-    public static final String PREF_LAST_CHECK_DATE     = "last_check_date";
+    public static final String PREF_LAST_CHECK_DATE = "last_check_date";
 
     // last downloaded ROM
-    public static final String PREF_FILE_ROM_UPDATE     = "rom_update_status";
+    public static final String PREF_FILE_ROM_UPDATE = "rom_update_status";
     // release name of last ROM
-    public static final String PREF_FILE_ROM_CHECK      = "rom_check_status";
+    public static final String PREF_FILE_ROM_CHECK = "rom_check_status";
     // next in the chain
-    public static final String PREF_FILE_ROM_NEXT       = "rom_check_next";
+    public static final String PREF_FILE_ROM_NEXT = "rom_check_next";
     // and its MD5 file
-    public static final String PREF_FILE_ROM_MD5        = "rom_md5_status";
+    public static final String PREF_FILE_ROM_MD5 = "rom_md5_status";
     // and changelog file
-    public static final String PREF_FILE_ROM_CHANGELOG  = "rom_changelog_status";
+    public static final String PREF_FILE_ROM_CHANGELOG = "rom_changelog_status";
 
     // name of graphic for background
-    public static final String PREF_CURR_IMAGE_NAME     = "curr_image_name";
+    public static final String PREF_CURR_IMAGE_NAME = "curr_image_name";
     // name of graphic for next available
-    public static final String PREF_LAST_IMAGE_NAME     = "last_image_name";
+    public static final String PREF_LAST_IMAGE_NAME = "last_image_name";
 
     // User Preferences
-    public static final String PREF_WILDLIFE_MIRROR     = "mirror_url";
-    public static final String PREF_DOWNLOAD_DIR        = "download_dir";
+    public static final String PREF_WILDLIFE_MIRROR = "mirror_url";
+    public static final String PREF_DOWNLOAD_DIR = "download_dir";
 
     // User pressed download button, override switches
-    public static final String PREF_CHOICE_DOWNLOAD     = "download_override";
-    public static final String PREF_FORCE_VERSION       = "force_version";
-    public static final String PREF_ALLOW_METERED       = "allow_metered";
-    public static final String PREF_ALWAYS_NOTIFY       = "always_notify";
-    public static final String ARG_SECTION_NUMBER       = "section_number";
-
+    public static final String PREF_CHOICE_DOWNLOAD = "download_override";
+    public static final String PREF_FORCE_VERSION = "force_version";
+    public static final String PREF_ALLOW_METERED = "allow_metered";
+    public static final String PREF_ALWAYS_NOTIFY = "always_notify";
+    public static final String ARG_SECTION_NUMBER = "section_number";
 
     // quick updater routines
-    public static void updatePref (String prefname, String newValue)
-    {
-        SharedPreferences.Editor edit =  sp.edit();
+    public static void updatePref(String prefname, String newValue) {
+        SharedPreferences.Editor edit = sp.edit();
         edit.putString(prefname, newValue);
         edit.apply();
     }
-    public static void updateSwitch (String prefname, boolean newValue)
-    {
-        SharedPreferences.Editor edit =  sp.edit();
+
+    public static void updateSwitch(String prefname, boolean newValue) {
+        SharedPreferences.Editor edit = sp.edit();
         edit.putBoolean(prefname, newValue);
         edit.apply();
     }
@@ -178,20 +169,21 @@ public class ZooGate extends Activity
 
         // We'll have some UI for setting this later
         ZooGate.WILDLIFE_MIRROR = sp.getString(PREF_WILDLIFE_MIRROR, ZooGate.WILDLIFE_MIRROR_DEFAULT);
-        ZooGate.SDCARD_DIR = Environment.getExternalStorageDirectory().toString();
+        ZooGate.SDCARD_FILEDIR = Environment.getExternalStorageDirectory();
+        ZooGate.SDCARD_DIR = ZooGate.SDCARD_FILEDIR.toString();
         ZooGate.USER_DIR = "/" + sp.getString(PREF_DOWNLOAD_DIR, DOWNLOAD_DIR) + "/";
         ZooGate.DOWNLOAD_DIR = ZooGate.SDCARD_DIR + ZooGate.USER_DIR;
         ZooGate.INSTALL_DIR = ZooGate.ACTUAL_SD_STORAGE + ZooGate.USER_DIR;
+        String filename = ZooGate.DOWNLOAD_DIR + releaseName + ".jpg";
 
         if (!ZooGate.releaseName.equals(
-                sp.getString(ZooGate.PREF_CURR_IMAGE_NAME, getString(R.string.unknown_info)))) {
+                sp.getString(ZooGate.PREF_CURR_IMAGE_NAME, getString(R.string.unknown_info))) || (!new File(filename).exists())) {
             Log.d("ZooGate.onCreate", "releaseName = " + ZooGate.releaseName + " !=  " +
                     sp.getString(ZooGate.PREF_CURR_IMAGE_NAME, getString(R.string.unknown_info)));
             spawnImageUpdate();
         } else {
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-            String filename = ZooGate.DOWNLOAD_DIR + releaseName + ".jpg";
             Bitmap bitmap = BitmapFactory.decodeFile(filename, options);
             if (new File(filename).exists()) {
                 View myView = ZooGate.myActivity.findViewById(R.id.drawer_layout);
@@ -228,7 +220,7 @@ public class ZooGate extends Activity
             startService(intent);
         } else {
             View myView = ZooGate.myActivity.findViewById(R.id.drawer_layout);
-            myView.setBackground(getResources().getDrawable(R.drawable.current_release,null));
+            myView.setBackground(getResources().getDrawable(R.drawable.current_release, null));
         }
     }
 
@@ -272,7 +264,7 @@ public class ZooGate extends Activity
                 mTitle = getString(R.string.title_section3);
                 break;
             case 4:
-                mTitle = getString(R.string.title_section4) ;
+                mTitle = getString(R.string.title_section4);
                 break;
             case 5:
                 mTitle = getString(R.string.title_section5);
@@ -290,6 +282,15 @@ public class ZooGate extends Activity
         }
     }
 
+    @Override
+    protected void onPause() {
+        // TODO Auto-generated method stub
+        super.onPause();
+        if (!NotifyDownloader.unregistered) {
+            //unregisterReceiver(NotifyDownloader.receiver);
+            //NotifyDownloader.unregistered = true;
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -316,22 +317,19 @@ public class ZooGate extends Activity
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivityForResult(intent, 69);
             return true;
-        }
-        else if (id == R.id.action_help) {
+        } else if (id == R.id.action_help) {
             Intent intent = new Intent(Intent.ACTION_VIEW);
             Uri uri = Uri.parse("https://eddon.systems/joomla/index.php/news-main/projects/zoo-keeper-app/31-zookeeper");
             intent.setData(uri);
             ZooGate.myActivity.startActivity(intent);
-        }
-        else if (id == R.id.action_feedback) {
+        } else if (id == R.id.action_feedback) {
             Intent emailIntent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts(
-                    "mailto","evan+zookeeper@eddon.systems", null));
+                    "mailto", "evan+zookeeper@eddon.systems", null));
             emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Zoo-Keeper Feedback");
             startActivity(Intent.createChooser(emailIntent, "Send email..."));
-        }
-        else if (id == R.id.action_advanced_menu) {
+        } else if (id == R.id.action_advanced_menu) {
             Intent intent = new Intent(this, AdvancedTools.class);
-            startActivity(intent);
+            startActivityForResult(intent, 69);
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -349,6 +347,21 @@ public class ZooGate extends Activity
     public static void forceCron() {
         runShellCommand("su -c /system/etc/init.d/20crond restart");
         ZooGate.sp.edit().putBoolean(ZooGate.PREF_USER_CRON_SERVICES, true).apply();
+        final Runnable unlock = new Runnable() {
+            public void run() {
+                cronlock = false;
+            }
+        };
+        final Runnable delay = new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                } catch (Exception e) {
+                }
+                myActivity.runOnUiThread(unlock);
+            }
+        };
+        new Thread(delay).start();
     }
 
     public static void killCron() {
@@ -357,6 +370,7 @@ public class ZooGate extends Activity
                 .putBoolean(ZooGate.PREF_USER_CRON_SERVICES, false)
                 .putBoolean(ZooGate.PREF_USER_AUTO_UPDATES, false)
                 .apply();
+        cronlock = false;
     }
 
     public static View.OnKeyListener newBackButton = new View.OnKeyListener() {
@@ -371,7 +385,6 @@ public class ZooGate extends Activity
                     return false;
                 }
             }
-
             return false;
         }
     };
@@ -379,106 +392,109 @@ public class ZooGate extends Activity
     public static void installCron() {
         Runnable part2 = new Runnable() {
             public void run() {
-                File crondir = new File(ZooGate.SDCARD_DIR + "/ZooKeeper/Cron/");
+                File crondir = new File(ZooGate.SDCARD_FILEDIR,"/ZooKeeper/Cron/");
                 String log = crondir.getAbsolutePath() + "/cronlog.txt";
 
                 if (!crondir.exists()) {
                     Log.d("installCron", "Creating " + crondir.toString());
-                    crondir.mkdir();
+                    crondir.mkdirs();
                 }
-                File simple = new File(crondir,"simple");
+                File simple = new File(crondir, "simple");
                 if (!simple.exists()) {
                     try {
                         FileOutputStream write = new FileOutputStream(simple);
                         StringBuilder sb = new StringBuilder();
                         sb.append("0 3 * * *    run-parts /system/etc/cron.daily >>")
                                 .append(log)
-                        .append(" 2>&1\n10 * * * *   run-parts /system/etc/cron.hourly >>")
+                                .append(" 2>&1\n10 * * * *   run-parts /system/etc/cron.hourly >>")
                                 .append(log)
-                        .append(" 2>&1\n20 4 * * 1   run-parts /system/etc/cron.weekly >>")
+                                .append(" 2>&1\n20 4 * * 1   run-parts /system/etc/cron.weekly >>")
                                 .append(log)
-                        .append(" 2>&1\n20 5 1 * *   run-parts /system/etc/cron.monthly >>")
+                                .append(" 2>&1\n20 5 1 * *   run-parts /system/etc/cron.monthly >>")
                                 .append(log)
-                        .append(" 2>&1\n");
+                                .append(" 2>&1\n");
                         write.write(sb.toString().getBytes(), 0, sb.length());
                         write.close();
-                    }
-                    catch (Exception e){
+                    } catch (Exception e) {
                         Log.e("installCron", e.getLocalizedMessage());
+                        e.printStackTrace();
                     }
                 }
-                File update = new File(crondir,"systemupdate");
+                File update = new File(crondir, "systemupdate");
                 if (!update.exists()) {
                     try {
                         FileOutputStream write = new FileOutputStream(update);
                         StringBuilder sb = new StringBuilder();
-                        sb.append("5 2 * * *    am startservice -n "+
-                                "\"systems.eddon.android.zoo_keeper/.NotifyDownloader\""+
+                        sb.append("5 2 * * *    am startservice -n " +
+                                "\"systems.eddon.android.zoo_keeper/.NotifyDownloader\"" +
                                 " --es Action Upgrade >>")
-                        .append(log)
-                        .append(" 2>&1");
+                                .append(log)
+                                .append(" 2>&1");
                         write.write(sb.toString().getBytes(), 0, sb.length());
                         write.close();
-                    }
-                    catch (Exception e){
+                    } catch (Exception e) {
                         Log.e("installCron", e.getLocalizedMessage());
+                        e.printStackTrace();
                     }
                 }
                 writeCronTab();
             }
         };
-
+        cronlock = true;
         File systemcrondir = new File("/system/etc/crontabs");
         if (!systemcrondir.exists()) {
+            Log.d("installCron", "Running Installer Script");
             runLocalRootCommand2("installCron.sh", part2);
         } else {
+            Log.d("installCron", "Directory Exists");
             new Thread(part2).start();
         }
     }
 
     public static void writeCronTab() {
-        Log.d("writeCrontab","Starting updates and refreshing cron!");
-        File crondir = new File(ZooGate.SDCARD_DIR + "/ZooKeeper/Cron/");
+        cronlock = true;
+        Log.d("writeCrontab", "Starting updates and refreshing cron!");
+        File crondir = new File(ZooGate.SDCARD_FILEDIR,"/ZooKeeper/Cron/");
+        if (!crondir.exists()) {
+            Log.d("installCron", "Creating " + crondir.toString());
+            crondir.mkdirs();
+        }
         writeRootFile("/system/etc/timezone", CronManagerFragment.findTZS());
-        File master = new File(crondir,"master");
+        File master = new File(crondir, "master");
         Log.d("writeCronTab", "master file is " + master.getAbsolutePath());
         try {
             FileOutputStream write = new FileOutputStream(master);
             StringBuilder sb = new StringBuilder();
-            sb.append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/ZooKeeper/Cron/simple").trim())
+            sb.append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/ZooKeeper/Cron/simple"))
                     .append("\n")
-                    .append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/ZooKeeper/Cron/systemupdate").trim())
+                    .append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/ZooKeeper/Cron/systemupdate"))
                     .append("\n")
-                    .append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/ZooKeeper/Cron/advanced").trim())
+                    .append(ZooGate.readFile(ZooGate.SDCARD_DIR + "/ZooKeeper/Cron/advanced"))
                     .append("\n");
             write.write(sb.toString().getBytes(), 0, sb.length());
             write.close();
             forceCron();
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             Log.e("writeCronTab", e.getLocalizedMessage());
             e.printStackTrace();
         }
     }
+
     public static String readFile(String file) {
+        Scanner scanner = null;
+        String text = "";
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            String line;
-            StringBuilder stringBuilder = new StringBuilder();
-            String ls = System.getProperty("line.separator");
-
-            while ((line = reader.readLine()) != null) {
-                stringBuilder.append(line);
-                stringBuilder.append(ls);
-            }
-
-            return stringBuilder.toString().trim();
+            scanner = new Scanner(new File(file), "UTF-8");
+            text = scanner.useDelimiter("\\A").next().trim();
         }
-        catch (Exception e)
-        {
+        catch (Exception e) {
             Log.e("readFile", file + " - " + e.getLocalizedMessage());
-            return "";          // must stay NULL
         }
+        finally {
+            if (scanner != null)
+                scanner.close(); // Put this call in a finally block
+        }
+        return text;
     }
 
     public static String readStream(InputStream reader) {
@@ -489,23 +505,23 @@ public class ZooGate extends Activity
 
             while ((count < 5) && (reader.available() <= 0)) {
                 count++;
-                try { Thread.sleep(200); } catch(Exception ex) {
+                try {
+                    Thread.sleep(100);
+                } catch (Exception ex) {
                     Log.d("readStream", ex.getLocalizedMessage());
                 }
             }
 
-            while(reader.available() > 0) {
+            while (reader.available() > 0) {
                 byte[] buffer = new byte[reader.available()];
                 int read_count = reader.read(buffer);
-                if ( read_count <= 0 ) break;
+                if (read_count <= 0) break;
                 Log.d("readStream", "Result: " + new String(buffer, "UTF8"));
                 stringBuilder.append(new String(buffer, "UTF8"));
             }
             return stringBuilder.toString().trim();
-        }
-        catch (Exception e)
-        {
-            Log.e("readStream", e.getLocalizedMessage() );
+        } catch (Exception e) {
+            Log.e("readStream", e.getLocalizedMessage());
             return "";          // NULL for consistency
         }
     }
@@ -513,7 +529,7 @@ public class ZooGate extends Activity
     private static void copyFile(InputStream in, OutputStream out) throws IOException {
         byte[] buffer = new byte[4096];
         int read;
-        while((read = in.read(buffer)) != -1){
+        while ((read = in.read(buffer)) != -1) {
             out.write(buffer, 0, read);
         }
     }
@@ -521,7 +537,7 @@ public class ZooGate extends Activity
     private static void copyAsset(String filename) {
         ContextWrapper contextWrapper = new ContextWrapper(ZooGate.myActivity.getBaseContext());
         File directory = contextWrapper.getDir("scripts", Context.MODE_PRIVATE);
-        copyAsset(filename,directory,null);
+        copyAsset(filename, directory, null);
     }
 
     private static void copyAsset(String filename, File directory, String destination) {
@@ -538,12 +554,12 @@ public class ZooGate extends Activity
             out.flush();
             out.close();
             runShellCommand("/system/bin/chmod 755 " + directory.getAbsolutePath() + "/" + destination);
-        } catch(IOException e) {
+        } catch (IOException e) {
             Log.e("copyAsset", "Failed to copy asset file: " + filename, e);
         }
     }
 
-    public static void popupMessage (final String errorText) {
+    public static void popupMessage(final String errorText) {
         popupMessageTime(errorText, Toast.LENGTH_SHORT);
     }
 
@@ -574,8 +590,7 @@ public class ZooGate extends Activity
                 try {
                     p = Runtime.getRuntime().exec(command);
                     p.waitFor();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     Log.e("runShellCommand", e.getLocalizedMessage());
                 }
             }
@@ -584,10 +599,11 @@ public class ZooGate extends Activity
     }
 
     public static String readShellCommand(final String command) {
-        return readShellCommandNotify("0", command);
+        return readShellCommandNotify("0", command, command, null);
     }
 
-    public static String readShellCommandNotify(final String id, final String command) {
+    public static String readShellCommandNotify(final String id, final String title,
+                                                final String command, final Runnable complete) {
         final int idvalue = Integer.valueOf(id);
         final StringBuilder output = new StringBuilder();
         Log.d("readShellCommand", command);
@@ -595,34 +611,42 @@ public class ZooGate extends Activity
             @Override
             public void run() {
                 try {
-                    int BUFF_LEN = 4096;
+                    int BUFF_LEN = 128;
                     Process p = Runtime.getRuntime().exec(command);
                     char[] buffer = new char[BUFF_LEN];
                     BufferedReader reader = new BufferedReader(
                             new InputStreamReader(p.getInputStream()));
-                    int exit = p.waitFor();
-                    int read;
-                    StringBuilder output = new StringBuilder();
-                    while ((read = reader.read(buffer)) > 0) {
-                        output.append(buffer, 0, read);
-                        if (idvalue > 0)
-                            Notify.showNotificationURL(ZooGate.myActivity, id, command,
-                                    buffer.toString(), null, "text/html");
-
+                    int exit = 0; //p.waitFor();
+                    boolean ok = true;
+                    try {
+                        String line = "";
+                        while ((line = reader.readLine()) != null) {
+                            if (idvalue > 0) {
+                                Notify.showNotificationURL(ZooGate.myActivity, id, title,
+                                        line, "https://eddon.systems", "text/html");
+                            }
+                            output.append(line);
+                            Log.d("readShellCommand", "read: " + line);
+                        }
+                        exit = p.waitFor();
+                    } catch (IOException e) {
+                        ok = false;
+                    } finally {
+                        reader.close();
+                        Log.d("readShellCommand", "exit: " + exit + " returned: " + output);
                     }
-                    reader.close();
-
-                    Log.d("readShellCommand", "exit: " + exit + " returned: " + output);
+                    if ((ok) && (complete != null))
+                        myActivity.runOnUiThread(complete);
                 } catch (Exception e) {
                     Log.e("readShellCommand", e.getLocalizedMessage());
+                    e.printStackTrace();
                 }
             }
         };
         if (idvalue > 0) {
             new Thread(shellprocess).start();
             return command;
-        }
-        else {
+        } else {
             shellprocess.run();
             return output.toString();
         }
@@ -659,8 +683,9 @@ public class ZooGate extends Activity
     public static void runLocalRootCommand(final String command) {
         runLocalRootCommand2(command, null);
     }
+
     public static void runLocalRootCommand2(final String command, final Runnable chain) {
-        Log.d("runLocalRootCommand", command);
+        Log.d("runLocalRootCommand2", command);
         Runnable thread = new Runnable() {
             public void run() {
                 StringBuilder sb = new StringBuilder();
@@ -672,8 +697,18 @@ public class ZooGate extends Activity
                 sb.append(command);
                 if (!(new File(sb.toString()).exists()))
                     copyAsset(command);
-                runShellCommand(sb.toString());
+                try {
+                    Process p = Runtime.getRuntime().exec(sb.toString());
+                    p.waitFor();
+                    Thread.sleep(100);
+                }
+                catch (Exception e) {
+                    Log.e("runLocalRootCommand2",e.getLocalizedMessage());
+                    e.printStackTrace();
+                }
+                Log.d("runLocalRootCommand2", command + " complete");
                 if (chain != null) {
+                    Log.d("runLocalRootCommand2", "Following Chain!");
                     chain.run();
                 }
             }
@@ -684,5 +719,4 @@ public class ZooGate extends Activity
     public static void rebootRecovery() {
         runShellCommand("su -c reboot recovery");
     }
-
 }

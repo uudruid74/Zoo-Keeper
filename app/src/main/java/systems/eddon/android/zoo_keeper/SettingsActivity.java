@@ -14,7 +14,6 @@ public class SettingsActivity extends Activity {
     Switch      AllowMetered;
     Switch      AlwaysNotify;
 
-    TextView    Release;
     TextView    GpsNtp;
     String      CurrentGps;
 
@@ -32,7 +31,6 @@ public class SettingsActivity extends Activity {
         AllowMetered.setChecked(ZooGate.sp.getBoolean(ZooGate.PREF_ALLOW_METERED, false));
         AlwaysNotify = (Switch) findViewById(R.id.notify_on_nothing);
         AlwaysNotify.setChecked(ZooGate.sp.getBoolean(ZooGate.PREF_ALWAYS_NOTIFY, false));
-        Release = (TextView) findViewById(R.id.force_text);
         GpsNtp = (TextView) findViewById(R.id.gps_ntp_text);
         if (!CurrentGps.equals(getString(R.string.default_ntp_server))) {
             GpsNtp.setText(CurrentGps);
@@ -66,15 +64,6 @@ public class SettingsActivity extends Activity {
         // Switches
         edit.putBoolean(ZooGate.PREF_ALLOW_METERED, AllowMetered.isChecked());
         edit.putBoolean(ZooGate.PREF_ALWAYS_NOTIFY, AlwaysNotify.isChecked());
-
-        // Force current release
-        if (Release.getText().toString().trim().length() > 2) {
-            ZooGate.releaseName = Release.getText().toString().trim();
-            edit.putString(ZooGate.PREF_FORCE_VERSION, ZooGate.releaseName);
-        } else {
-            ZooGate.releaseName = ZooGate.readFile("/system/etc/release");
-            edit.remove(ZooGate.PREF_FORCE_VERSION);
-        }
 
         // GPS
         String ntpserver = GpsNtp.getText().toString().trim();

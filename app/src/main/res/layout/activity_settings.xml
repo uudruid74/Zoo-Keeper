@@ -86,29 +86,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="Force Release"
-        android:id="@+id/textView15"
-        android:layout_below="@+id/textView14"
-        android:layout_alignParentStart="true" />
-
-    <EditText
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/force_text"
-        android:layout_below="@+id/textView15"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentEnd="true"
-        android:hint="Clears at app start"
-        android:inputType="textCapWords" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="GPS NTP Server"
         android:id="@+id/textView16"
-        android:layout_below="@+id/force_text"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/textView14" />
 
     <EditText
         android:layout_width="wrap_content"

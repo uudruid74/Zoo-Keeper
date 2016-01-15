@@ -13,7 +13,7 @@ mkdir /system/etc/crontabs
 chown root.root /system/etc/crontabs
 chmod 775 /system/etc/crontabs
 mkdir -p $USERDIR
-chown root.root $USERDIR
+chown -R media_rw:media_rw /data/media/0/ZooKeeper
 chmod 777 $USERDIR
 for DIR in $SUBDIRS; do
     mkdir /system/etc/cron.$DIR
@@ -68,8 +68,17 @@ cat >$USERDIR/advanced <<"EOADV"
 #
 
 EOADV
-chmod 666 $USERDIR/advanced
-chown root.root $USERDIR/advanced
+
+CRONFILES="simple advanced systemupdate"
+for file in $CRONFILES; do
+    echo >$USERDIR/$file
+    chmod 666 $USERDIR/$file
+    chown media_rw.media_rw $USERDIR/$file
+done
+
+echo >$USERDIR/master
+chmod 666 $USERDIR/master
+chown root.root $USERDIR/master
 
 cat >/system/xbin/ZooToast <<"EOTCH"
 #!/system/bin/sh
@@ -107,6 +116,21 @@ chmod 775 /system/xbin/ZooNotify
 
 # The magic link!
 ln -s $USERDIR/master /system/etc/crontabs/root
+
+cat >/system/etc/init.d/10restoreData <<"EORESTORE"
+#!/system/xbin/bash
+#
+# Stupidly Simple Auto-Restore start-up script - EKL
+#
+
+TAG="/data/media/0/ZooKeeper/restore-on-boot"
+if [ -f "$TAG" ]; then
+    echo "Restoring Backup Data!"
+    rm $TAG
+    /data/media/0/ZooKeeper/restore.sh
+fi
+
+EORESTORE
 
 cat >/system/etc/init.d/20crond <<"EOCD"
 #!/system/xbin/bash
@@ -186,7 +210,8 @@ chmod 775 /system/etc/init.d/20crond
 chown root.root /system/etc/init.d/20crond
 
 # This part is for backups
-cat >/sdcard/ZooKeeper/backup.sh <<EOBACKUP
+mkdir -p /data/media/0/ZooKeeper/snapshot
+cat >/data/media/0/ZooKeeper/backup.sh <<"EOBACKUP"
 #!/system/xbin/sh
 #
 # Backup Script
@@ -196,22 +221,20 @@ cat >/sdcard/ZooKeeper/backup.sh <<EOBACKUP
 
 PATH="/system/xbin:$PATH"
 export PATH
-if [ ! -d "/sdcard/ZooKeeper/snapshot" ]; then
-        mkdir /sdcard/ZooKeeper/snapshot
-fi
-cd /sdcard/ZooKeeper
+cd /data/media/0/ZooKeeper
 echo "Starting Backup!"
+rm -rf snapshot
 find /data/app -print | grep -F 'base.apk' | xargs -n 1 /data/media/0/ZooKeeper/cpAPK.sh
 echo
 echo "Backing Up Extra Files ..."
-tar -cpJ -f /sdcard/ZooKeeper/app-lib.tar.xz /data/app-lib 2>/dev/null
-tar -cpJ -f /sdcard/ZooKeeper/app-private.tar.xz /data/app-private 2>/dev/null
+tar -cpJ -f /data/media/0/ZooKeeper/app-lib.tar.xz /data/app-lib 2>/dev/null
+tar -cpJ -f /data/media/0/ZooKeeper/app-private.tar.xz /data/app-private 2>/dev/null
 echo "Backup Complete!"
 
 EOBACKUP
 chmod 777 /data/media/0/ZooKeeper/backup.sh
 
-cat >/sdcard/ZooKeeper/cpAPK.sh <<EOCPAK
+cat >/data/media/0/ZooKeeper/cpAPK.sh <<"EOCPAK"
 #!/system/xbin/sh
 #
 # CpAPK
@@ -222,17 +245,32 @@ cat >/sdcard/ZooKeeper/cpAPK.sh <<EOCPAK
 APK=$1
 NAME=`echo $1 | cut -d '/' -f 4`
 NEWN=`echo $NAME | cut -d '-' -f 1`
-if [ ! -d "/sdcard/ZooKeeper/snapshot/$NEWN" ]; then
-        mkdir /sdcard/ZooKeeper/snapshot/$NEWN
+if [ ! -d "/data/media/0/ZooKeeper/snapshot/$NEWN" ]; then
+        mkdir -p /data/media/0/ZooKeeper/snapshot/$NEWN
 fi
 echo "$NEWN"
-tar -cpJ -f /sdcard/ZooKeeper/snapshot/$NEWN/$NEWN.apk.tar.bz2 $APK 2>/dev/null
-tar -cpJ -f /sdcard/ZooKeeper/snapshot/$NEWN/$NEWN.data.tar.bz2 /data/data/$NEWN 2>/dev/null
+tar -cpJ -f /data/media/0/ZooKeeper/snapshot/$NEWN/$NEWN.apk.tar.bz2 $APK 2>/dev/null
+tar -cpJ -f /data/media/0/ZooKeeper/snapshot/$NEWN/$NEWN.data.tar.bz2 /data/data/$NEWN 2>/dev/null
 
 EOCPAK
-chmod 777 /data/media/0/ZooBackup/cpAPK.sh
+chmod 777 /data/media/0/ZooKeeper/cpAPK.sh
 
-cat >/sdcard/ZooKeeper/restore.sh <<EOR
+cat >/data/media/0/ZooKeeper/wipe-snapshot.sh <<"EOWS"
+#!/usr/bin/env bash
+#
+# Wipe Snapshot
+# /sdcard/ZooKeeper/wipe-snapshot.sh
+# - Easily Delete Snapshot (run as root)
+#
+
+echo "Wiping ..."
+rm -rf /data/media/0/ZooKeeper/snapshot
+echo "Done!"
+
+EOWS
+chmod 777 /data/media/0/ZooKeeper/wipe-snapshot.sh
+
+cat >/data/media/0/ZooKeeper/restore.sh <<"EOR"
 #!/system/xbin/sh
 #
 # restore.sh
@@ -241,7 +279,7 @@ cat >/sdcard/ZooKeeper/restore.sh <<EOR
 #
 
 APP=$1
-DIR="/sdcard/ZooKeeper/snapshot"
+DIR="/data/media/0/ZooKeeper/snapshot"
 
 if [ -z "$APP" ]; then
         APP="*"
@@ -250,7 +288,7 @@ else
         if [ -d "${DIR}/${APP}" ]; then
                 echo "Restoring $APP"
         else
-                echo "No such app as $APP"
+                echo "No Backup Found for $APP"
                 exit 1
         fi
 fi
@@ -260,19 +298,21 @@ cd "$DIR"
 for dir in `echo $APP`; do
         cd "${DIR}/${dir}"
         OUT=`tar -vxf "${DIR}/${dir}/${dir}.apk.tar.bz2"`
-        RESULT=`pm install -rd "${DIR}/${dir}/$OUT" 2>&1`
+        RESULT=`pm install -r -d "${DIR}/${dir}/$OUT" 2>&1`
         UID_CHANGE=`echo $RESULT | grep UID_CHANGED`
         if [ ! -z "$UID_CHANGE" ]; then
                 echo UID_CHANGED
                 rm -rf /data/data/$APP*
-                pm install -rf "${DIR}/${dir}/$OUT"
+                pm install -r -d "${DIR}/${dir}/$OUT"
         else
                 echo $APP - $RESULT
         fi
         rm -rf data
         cd /
         USERID=`dumpsys package $APP | grep userId= | sed -Er 's/.*userId=([0-9]+) .*/\1/'`
-        tar -xf "/sdcard/ZooKeeper/snapshot/${dir}/${dir}.data.tar.bz2"
+        if [ ! -d /data/data/$APP* ]; then
+            tar -xf "/data/media/0/ZooKeeper/snapshot/${dir}/${dir}.data.tar.bz2"
+        fi
         chown -R ${USERID}:${USERID} /data/data/$APP*
 done
 echo
@@ -280,5 +320,6 @@ echo "Restore Complete!"
 
 EOR
 chmod 777 /data/media/0/ZooKeeper/restore.sh
-
+sync
 mount -o remount,ro /system
+sync

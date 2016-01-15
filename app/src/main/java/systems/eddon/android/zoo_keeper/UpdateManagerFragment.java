@@ -94,6 +94,7 @@ public class UpdateManagerFragment extends Fragment {
         options.inPreferredConfig = Bitmap.Config.ARGB_8888;
         String filename = ZooGate.DOWNLOAD_DIR + nextRelease + ".jpg";
         if (new File(filename).exists()) {
+            Log.d("setButtonStates","File: " + filename + " already exists");
             Bitmap image = BitmapFactory.decodeFile(filename, options);
             NextReleaseImage.setImageDrawable(new BitmapDrawable(ZooGate.myActivity.getResources(), image));
         } else {
