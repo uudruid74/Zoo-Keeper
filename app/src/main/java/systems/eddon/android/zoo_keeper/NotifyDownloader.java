@@ -13,6 +13,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.Uri;
 import android.os.Environment;
@@ -540,7 +541,9 @@ public class NotifyDownloader extends IntentService {
             Log.d("enqueuDownload", "Downloading ZIP file");
             allowDownload = ZooGate.sp.getBoolean(ZooGate.PREF_ALLOW_METERED, false) |
                     ZooGate.sp.getBoolean(ZooGate.PREF_CHOICE_DOWNLOAD, false);
-            if (!allowDownload) {
+            ConnectivityManager cm = (ConnectivityManager) ZooGate.myActivity
+                    .getSystemService(Context.CONNECTIVITY_SERVICE);
+            if ((!allowDownload) && (cm.isActiveNetworkMetered())) {
                 Log.d("enqueueDownload", "Restricted to unmetered");
                 notifyWaitingOnWifi(url, extra_action);
                 return;
