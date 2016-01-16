@@ -1,6 +1,10 @@
 # Zoo-Keeper
 CHANGELOG
 
+1.0.6 BugFix
+	Get issues with DOwnloader and Notifications synce
+	  -- had to work around Android bug.
+
 1.0.5 BugFix
 	Fix crashes, lots of bugs in downloader fixed
 	Moved "Force Release" to new Advanced menu
