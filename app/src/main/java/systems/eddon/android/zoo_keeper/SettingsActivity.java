@@ -1,9 +1,13 @@
 package systems.eddon.android.zoo_keeper;
 
 import android.app.Activity;
+import android.app.NotificationManager;
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.TextView;
 
@@ -16,11 +20,22 @@ public class SettingsActivity extends Activity {
 
     TextView    GpsNtp;
     String      CurrentGps;
+    int         cancelId = 0;
+    String      downloadURL;
+    String      action;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
+
+        Intent launchIntent = this.getIntent();
+        if (launchIntent != null)
+            onNewIntent(launchIntent);
+        else
+            adjustGui();
+    }
+    private void adjustGui() {
         CurrentGps = ZooGate.readShellCommand("grep NTP_SERVER= /system/etc/gps.conf").trim().substring(11);
 
         Mirror = (TextView) findViewById(R.id.mirror_text);
@@ -29,6 +44,15 @@ public class SettingsActivity extends Activity {
         Directory.setText(ZooGate.sp.getString(ZooGate.PREF_DOWNLOAD_DIR, ZooGate.DEF_DOWNLOAD));
         AllowMetered = (Switch) findViewById(R.id.metered_downloads);
         AllowMetered.setChecked(ZooGate.sp.getBoolean(ZooGate.PREF_ALLOW_METERED, false));
+        AllowMetered.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if ((isChecked) && (cancelId == 2)) {
+                    ZooGate.sp.edit().putBoolean(ZooGate.PREF_ALLOW_METERED, isChecked).commit();
+                    retryDownload();
+                }
+            }
+        });
         AlwaysNotify = (Switch) findViewById(R.id.notify_on_nothing);
         AlwaysNotify.setChecked(ZooGate.sp.getBoolean(ZooGate.PREF_ALWAYS_NOTIFY, false));
         GpsNtp = (TextView) findViewById(R.id.gps_ntp_text);
@@ -37,9 +61,38 @@ public class SettingsActivity extends Activity {
         }
     }
 
+    public void retryDownload() {
+        cancelId = 0;
+        Intent intent = new Intent(ZooGate.myActivity, NotifyDownloader.class);
+        intent.putExtra(ZooGate.EXTRA_ACTION, ZooGate.ACTION_RESTART);
+        intent.putExtra(ZooGate.EXTRA_CANCEL, "2");
+        intent.putExtra(ZooGate.EXTRA_DESCR, action);
+        intent.putExtra(ZooGate.EXTRA_URL, downloadURL);
+        ZooGate.myActivity.startService(intent);
+    }
+    @Override
+    protected void onNewIntent(Intent launchIntent) {
+        if (launchIntent != null) {
+            String cancelNotification = launchIntent.getStringExtra(ZooGate.EXTRA_CANCEL);
+            if (cancelNotification != null) {
+                cancelId = Integer.valueOf(cancelNotification);
+                if (cancelId != 2) {
+                    ((NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE))
+                            .cancel(cancelId);
+                } else {
+                    downloadURL = launchIntent.getStringExtra(ZooGate.EXTRA_URL);
+                    action = launchIntent.getStringExtra(ZooGate.EXTRA_ACTION);
+                }
+            }
+        }
+        adjustGui();
+    }
     @Override
     public void onBackPressed() {
         SharedPreferences.Editor edit = ZooGate.sp.edit();
+
+        if (cancelId == 2)
+            retryDownload();
 
         // Download Mirror
         if (Mirror.getText().toString().trim().length() > 3) {

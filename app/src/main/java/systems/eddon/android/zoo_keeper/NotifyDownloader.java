@@ -13,6 +13,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.Network;
 import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
@@ -21,6 +22,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -30,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Queue;
 import java.util.Random;
 
 
@@ -41,9 +44,8 @@ public class NotifyDownloader extends IntentService {
     private String url;
     private String extra_action;
     private String description;
-    public static boolean unregistered = true;
-
     public static DownloadManager dm;
+
     public static SharedPreferences sp;
 
     private static HashMap<Long,String>    IdToPREF = new HashMap();
@@ -52,6 +54,10 @@ public class NotifyDownloader extends IntentService {
 
     private static int      SuccessCount = 0;
     private static int      FailureCount = 0;
+    private static boolean  registered = false;
+
+    public String PendingDownloadPref;
+    public String PendingDownloadURL;
 
     public NotifyDownloader() {
         super("NotifyDownloader");
@@ -73,49 +79,98 @@ public class NotifyDownloader extends IntentService {
 
 
     private void checkDownloadStatus(long downloadId) {
-        if (!IdToPREF.containsKey(downloadId))
+        if (!IdToPREF.containsKey(downloadId)) {
+            Log.d("checkDownloadStatus", "No such key: " + downloadId);
             return;
-        Log.d("onReceive", "Download OK.  ID=" + downloadId);
-
+        }
         DownloadManager.Query query = new DownloadManager.Query();
-        query.setFilterById(downloadId);
+        //if (downloadId > 0)
+        //    query.setFilterById(downloadId);
         Cursor c = dm.query(query);
         if (c.moveToFirst()) {
-            int columnIndex = c.getColumnIndex(DownloadManager.COLUMN_STATUS);
-            int status = c.getInt(columnIndex);
-            int columnReason = c.getColumnIndex(DownloadManager.COLUMN_REASON);
-            int reason = c.getInt(columnReason);
-            Log.d("DM Sample", "Status Check: " + status);
-            switch (status) {
-                case DownloadManager.STATUS_PAUSED:
-                case DownloadManager.STATUS_PENDING:
-                    notifyWaitingOnNetwork();
-                case DownloadManager.STATUS_RUNNING:
-                    break;
-                case DownloadManager.STATUS_SUCCESSFUL:
-                    try {
-                        ParcelFileDescriptor file = dm.openDownloadedFile(downloadId);
-                        FileInputStream fis = new ParcelFileDescriptor.AutoCloseInputStream(file);
-                        fileSuccessful(downloadId, fis);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    break;
-                case DownloadManager.STATUS_FAILED:
-                    FailureCount++;
-                    ZooGate.popupMessage("FAIL! Can't download this url:\n" +
-                            c.getString(c.getColumnIndex(DownloadManager.COLUMN_URI)));
-                    notifyDownloadFail();
-                    break;
-            }
+            do {
+                int idCol = c.getColumnIndex(DownloadManager.COLUMN_ID);
+                long idnum = c.getLong(idCol);
+                if ((downloadId > 0) && (idnum != downloadId)) {
+                    Log.d("checkDownloadStatus", "Skipping ID=" + idnum);
+                    continue;
+                }
+                int status = c.getInt(c.getColumnIndex(DownloadManager.COLUMN_STATUS));
+                int reason = c.getInt(c.getColumnIndex(DownloadManager.COLUMN_REASON));
+                String URL = c.getString(c.getColumnIndex(DownloadManager.COLUMN_URI));
+                Log.d("checkDownloadStatus", "ID=" + downloadId + " Status Check: " + status);
+                switch (status) {
+                    case DownloadManager.STATUS_PENDING:
+                    case DownloadManager.STATUS_PAUSED:
+                    case DownloadManager.STATUS_RUNNING:
+                        break;
+                    case DownloadManager.STATUS_SUCCESSFUL:
+                        Log.d("checkDownloadStatus", "Success");
+                        try {
+                            ParcelFileDescriptor file = dm.openDownloadedFile(downloadId);
+                            FileInputStream fis = new ParcelFileDescriptor.AutoCloseInputStream(file);
+                            fileSuccessful(downloadId, fis);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            IdToPREF.remove(downloadId);
+                        }
+                        break;
+                    case DownloadManager.STATUS_FAILED:
+                        FailureCount++;
+                        ZooGate.popupMessage("FAIL! Can't download this url:\n" +
+                                c.getString(c.getColumnIndex(DownloadManager.COLUMN_URI)));
+                        notifyDownloadFail();
+                        IdToPREF.remove(downloadId);
+                        break;
+                }
+            } while (c.moveToNext());
             c.close();
-            IdToPREF.remove(downloadId);
-            // If Empty, wait 5s and enable Check?, unregister receiver?
         }
     };
 
+    private void restartDownload(String URL, String thisPref) {
+        Log.d("restartDownload", "URL=" + URL + " Action=" + thisPref);
+        enqueueDownload(URL, thisPref);
+    }
+    private void startBackup() {
+        final Runnable enableButtons = new Runnable() {
+                    public void run() {
+                        if (ZooGate.myActivity != null &&
+                                new File(ZooGate.ACTUAL_SD_STORAGE, "ZooKeeper/snapshot")
+                                        .listFiles().length > 4) {
+                            Button Restore = (Button) ZooGate.myActivity
+                                    .findViewById(R.id.restorenow_button);
+                            if (Restore != null) {
+                                Restore.setEnabled(true);
+                                Restore.setAlpha(1f);
+                            }
+                            Button RestoreOnBoot = (Button) ZooGate.myActivity
+                                    .findViewById(R.id.restoreonboot_button);
+                            if (RestoreOnBoot != null) {
+                                RestoreOnBoot.setEnabled(true);
+                                RestoreOnBoot.setAlpha(1f);
+                            }
+                        }
+                    }
+                };
+        ZooGate.popupMessage("Backing up all your data ...");
+        ZooGate.readShellCommandNotify("5", "Backing up apps & data",
+                "su -c /data/media/0/ZooKeeper/backup.sh", enableButtons);
+    }
 
-
+    private void startRestore() {
+        Runnable restoreComplete = new Runnable() {
+                        public void run() {
+                            Notify.notificationCreate("Restore Complete", "Finished!",
+                                    R.drawable.ic_info_black_24dp, 5, AdvancedTools.class,
+                                    null, null);
+                        }
+                    };
+                    ZooGate.popupMessage("Set your phone down.  This will take awhile!");
+                    ZooGate.readShellCommandNotify("5", "Restoring Backup",
+                            "/data/media/0/ZooKeeper/restore.sh",
+                            restoreComplete);
+    }
     @Override
     protected void onHandleIntent(Intent intent) {
         sp = PreferenceManager.getDefaultSharedPreferences(this);
@@ -127,26 +182,55 @@ public class NotifyDownloader extends IntentService {
         ZooGate.DOWNLOAD_DIR = ZooGate.SDCARD_DIR + ZooGate.USER_DIR;
         ZooGate.INSTALL_DIR = ZooGate.ACTUAL_SD_STORAGE + ZooGate.USER_DIR;
 
-        if (unregistered) {
-            Log.d("onHandleIntent", "Registering Broadcast Receiver");
-            ZooGate.myActivity.registerReceiver(receiver, new IntentFilter(
-                    DownloadManager.ACTION_DOWNLOAD_COMPLETE));
-            unregistered = false;
-        }
         extra_action = intent.getStringExtra(ZooGate.EXTRA_ACTION);
         url = intent.getStringExtra(ZooGate.EXTRA_URL);
         description = intent.getStringExtra(ZooGate.EXTRA_DESCR);
-
+        String cancel = intent.getStringExtra(ZooGate.EXTRA_CANCEL);
+        if (cancel != null) {
+            if (cancel != null)
+                ((NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE))
+                        .cancel(Integer.valueOf(cancel));
+        }
         if (extra_action.equals(ZooGate.ACTION_UPGRADE)) {
             NavigationDrawerFragment.fetchUpdate();
+        } else if (extra_action.equals(ZooGate.ACTION_BACKUP)) {
+            startBackup();
+        } else if (extra_action.equals(ZooGate.ACTION_RESTORE)) {
+            startRestore();
+        } else if (extra_action.equals(ZooGate.ACTION_RESTART)) {
+            restartDownload(url,description);
         } else {
             dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-            enqueueDownload();
+            enqueueDownload(url, extra_action);
         }
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Log.d("onCreate", "Receiver Registered");
+        if (!registered) {
+            ZooGate.myActivity.registerReceiver(receiver, new IntentFilter(
+                    DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+            registered = true;
+        } else {
+            Log.d("onCreate", "Already Registered?");
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.d("onDestroy", "receiver unregistered");
+        if ((registered) && IdToPREF.isEmpty()) {
+            ZooGate.myActivity.unregisterReceiver(receiver);
+            registered = false;
+        }
+        super.onDestroy();
     }
 
     private void fileSuccessful (long downloadId, FileInputStream in) {
         final String prefname = IdToPREF.get(downloadId);
+        Log.d("fileSuccessful", "ID=" + downloadId + " Pref: " + prefname);
         if (prefname.equals(ZooGate.PREF_FILE_ROM_CHECK)) {
             final String nextRel = ZooGate.readStream(in).trim();
             final String checkTime = new Date().toString();
@@ -166,7 +250,6 @@ public class NotifyDownloader extends IntentService {
             // Update last Release name if changed
             Log.d("PREF_FILE_ROM_CHECK", "Now on " + ZooGate.releaseName + " but available is " + nextRel);
             if (!nextRel.equals(ZooGate.releaseName)) {
-                notifyDownloadAvail();
                 if (ZooGate.sectionNumber == 1) {
                     Runnable updateTv = new Runnable() {
                         public void run() {
@@ -179,12 +262,12 @@ public class NotifyDownloader extends IntentService {
                 // Start the download chain
                 if (sp.getBoolean(ZooGate.PREF_USER_DOWNLOAD, true)) {
                     startDownloadChain();
-                }
+                } else notifyDownloadAvail();
             } else {
                 if (ZooGate.sp.getBoolean(ZooGate.PREF_ALWAYS_NOTIFY, false)) {
                     notifyNothingNew();
                 } else {
-                    ZooGate.popupMessage("Sorry, try again tomorrow!");
+                    ZooGate.popupMessage(getString(R.string.no_rom_available));
                 }
             }
             // Determine if "available" image icon needs updating
@@ -286,6 +369,8 @@ public class NotifyDownloader extends IntentService {
                         SuccessCount++;
                         if (sp.getBoolean(ZooGate.PREF_UPDATE_RECOVERY, true))
                             checkLastROM(zipfilename);
+                        else
+                            notifyDownloadReady();
                     } else {
                         ZooGate.popupMessage(filename + ": " + userNoticeFail);
                         Log.d("PREF_FILE_ROM_MD5", "["+calcMD5Sum+"] vs [" + downloadMD5+"]");
@@ -313,7 +398,7 @@ public class NotifyDownloader extends IntentService {
         intent.putExtra(ZooGate.EXTRA_URL, ZooGate.WILDLIFE_MIRROR + ZooGate.ROM_UPDATE_INF
                 + ZooGate.sp.getString(ZooGate.PREF_FILE_ROM_CHECK, "Aardvark") + ".changelog");
         intent.putExtra(ZooGate.EXTRA_ACTION, ZooGate.PREF_FILE_ROM_CHANGELOG);
-        intent.putExtra(ZooGate.EXTRA_DESCR, "Fetching ROM Changelog");
+        intent.putExtra(ZooGate.EXTRA_DESCR, "Changelog for WildLife ROM");
         ZooGate.myActivity.startService(intent);
     }
 
@@ -327,7 +412,7 @@ public class NotifyDownloader extends IntentService {
         intent.putExtra(ZooGate.EXTRA_ACTION, ZooGate.PREF_FILE_ROM_NEXT);
         // save the "from", fetch "to"
         ZooGate.updatePref(ZooGate.PREF_FILE_ROM_NEXT, ZooGate.releaseName);
-        intent.putExtra(ZooGate.EXTRA_DESCR, "Checking Update Chains");
+        intent.putExtra(ZooGate.EXTRA_DESCR, "Update Chains File");
         ZooGate.myActivity.startService(intent);
         new File(ZooGate.DOWNLOAD_DIR + ZooGate.CURRENT_ROM).deleteOnExit();
     }
@@ -338,7 +423,7 @@ public class NotifyDownloader extends IntentService {
                 + filename );
         intent.putExtra(ZooGate.EXTRA_ACTION, ZooGate.PREF_FILE_ROM_UPDATE);
         ZooGate.updatePref(ZooGate.PREF_FILE_ROM_UPDATE, filename); // save the filename
-        intent.putExtra(ZooGate.EXTRA_DESCR, "Downloading ROM Update");
+        intent.putExtra(ZooGate.EXTRA_DESCR, "WildLife ROM Update");
         ZooGate.myActivity.startService(intent);
     }
 
@@ -348,7 +433,7 @@ public class NotifyDownloader extends IntentService {
                 + filename + ".md5" );
         intent.putExtra(ZooGate.EXTRA_ACTION, ZooGate.PREF_FILE_ROM_MD5);
         ZooGate.updatePref(ZooGate.PREF_FILE_ROM_MD5, filename); // save the filename
-        intent.putExtra(ZooGate.EXTRA_DESCR, "Fetching MD5 for ROM");
+        intent.putExtra(ZooGate.EXTRA_DESCR, "MD5 for "+filename);
         ZooGate.myActivity.startService(intent);
     }
 
@@ -384,11 +469,7 @@ public class NotifyDownloader extends IntentService {
         };
 
         if ((!DownloadFileList.isEmpty()) && (SuccessCount > 0) && (FailureCount == 0)) {
-            if (sp.getBoolean(ZooGate.PREF_UPDATE_RECOVERY, true)) {
-                new Thread(updateRecoveryScript).start();
-            } else {
-                notifyDownloadAvail();
-            }
+            new Thread(updateRecoveryScript).start();
         } else {
             if (DownloadFileList.isEmpty())
                 Log.d("startRecoveryUpdates", "List of files is empty");
@@ -406,7 +487,7 @@ public class NotifyDownloader extends IntentService {
     }
 
     // Need to save download ID here and test for it up top.
-    private void enqueueDownload() {
+    private void enqueueDownload(String url, String extra_action) {
         Uri thisUri = Uri.parse(url);
         String filename = thisUri.getLastPathSegment();
         String absolutefilename;
@@ -425,28 +506,15 @@ public class NotifyDownloader extends IntentService {
         if ((DownloadFileList != null) && (DownloadFileList.contains(filename))) {
             Log.d("enqueueDownload", filename + " already pending in FileList");
         }
-        
+
         // FIXME: Here is a great place to disable Check button
         File downloaddir = new File(Environment.getExternalStorageDirectory()+ ZooGate.USER_DIR);
         if (!downloaddir.exists())
             downloaddir.mkdirs();
 
         int Visible = DownloadManager.Request.VISIBILITY_VISIBLE;
-        if (filename.endsWith(".zip"))
-            Visible = DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED;
-
-        boolean allowDownload = true;
-        Log.d("enqueueDownload", "Testing filename for ending");
-        if (filename.endsWith(".zip")) {
-            DownloadFileList.add(filename);
-            Log.d("enqueuDownload", "Downloading ZIP file");
-            allowDownload = ZooGate.sp.getBoolean(ZooGate.PREF_ALLOW_METERED, false);
-            if (!allowDownload) {
-                Log.d("enqueueDownload", "Restricted to unmetered");
-            } else {
-                Log.d("enqueueDownload", "Download is Allowed");
-            }
-        }
+        /* if (filename.endsWith(".zip"))
+            Visible = DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED; */
 
         /**
          * This bit is to fake success when file already exists
@@ -466,6 +534,23 @@ public class NotifyDownloader extends IntentService {
             return;
         }
 
+        boolean allowDownload = true;
+        if (filename.endsWith(".zip")) {
+            DownloadFileList.add(filename);
+            Log.d("enqueuDownload", "Downloading ZIP file");
+            allowDownload = ZooGate.sp.getBoolean(ZooGate.PREF_ALLOW_METERED, false) |
+                    ZooGate.sp.getBoolean(ZooGate.PREF_CHOICE_DOWNLOAD, false);
+            if (!allowDownload) {
+                Log.d("enqueueDownload", "Restricted to unmetered");
+                notifyWaitingOnWifi(url, extra_action);
+                return;
+            } else {
+                Log.d("enqueueDownload", "Download is Allowed");
+            }
+        }
+
+
+
         Log.d("enqueueDownload", extra_action + " Description: " + description + " to " +ZooGate.USER_DIR + filename );
         DownloadFileSet.add(filename);
         //DownloadFileList.add(filename);
@@ -484,53 +569,73 @@ public class NotifyDownloader extends IntentService {
     }
 
     private void notifyDownloadFail() {
-        notificationCreate("Download Failure of " + FailureCount + " files!", R.drawable.ic_fail, 04);
+        Notify.notificationCreate("ZooKeeper Download Failed", FailureCount + " files failed!",
+                R.drawable.ic_fail, 04, ZooGate.class, null, null);
     }
     private void notifyDownloadAvail() {
-        notificationCreate(getString(R.string.new_rom_available), R.drawable.ic_cloud_avail, 01);
+        Notify.notificationCreate(null, getString(R.string.new_rom_available),
+                R.drawable.ic_cloud_avail, 01, ZooGate.class, null, null);
     }
+    private void notifyDownloadReady() {
+        Notify.notificationCreate(null, getString(R.string.new_rom_flashable),
+                R.drawable.ic_cloud_avail, 01, ZooGate.class, null, null);
+    }
+
     private void notifyRebootReady() {
-        notificationCreate("A New ROM Ready to Install!", R.drawable.ic_cloud_avail, 01);
+        Notify.notificationCreate(null, "A New ROM is Ready to Install!",
+                R.drawable.ic_cloud_avail, 01, ZooGate.class, null, null);
     }
     private void notifySafetyFailure() {
-        notificationCreate("Safety checks failed.  Recovery untouched.  S:"+SuccessCount+" F:"+FailureCount, R.drawable.ic_stop, 03);
+        Notify.notificationCreate(null,
+                "Safety checks failed.  Recovery untouched.  S:" +
+                        SuccessCount + " F:" + FailureCount, R.drawable.ic_stop, 03, ZooGate.class, null, null);
     }
     private void notifyNothingNew() {
-        notificationCreate("I checked for updates.  Nothing new yet!", R.drawable.ic_clock, 01);
+        Notify.notificationCreate(null,
+                "No New ROM Updates",
+                R.drawable.ic_clock, 01, ZooGate.class, null, null);
     }
     private void notifyInfo(String Message, String URL) {
-        Notify.showNotificationURL(ZooGate.myActivity, "2", "WildLife Info",  Message, URL, "text/html");
+        Notify.notificationCreate(null, Message,
+                R.drawable.ic_info_black_24dp, 02, null, URL,
+                "text/html");
     }
     private void notifyCleanFlash(String Message, String URL) {
-        Notify.showNotificationURL(ZooGate.myActivity, "2", "Clean Flash Required",  Message, URL, "text/html");
+        Notify.notificationCreate("Clean Flash Required", Message, R.drawable.ic_stop, 2,
+                AdvancedTools.class, URL, null);
     }
-    private void notifyWaitingOnNetwork() {
-        notificationCreate("Waiting On Network.  Check WiFi!", R.drawable.ic_stop, 04);
+    private void notifyWaitingOnNetwork(String pref, String URL, long downloadid) {
+        Uri thisUri = Uri.parse(URL);
+        String filename = thisUri.getLastPathSegment();
+        Notify.notificationCreate(null, "No network to download " + filename, R.drawable.ic_stop, 2,
+                Network.class, String.valueOf(downloadid), pref);
+    }
+    private void notifyPending(String pref, String URL, final long downloadid) {
+        final Runnable wait = new Runnable() {
+            public void run() {
+                try { Thread.sleep(5000); } catch (Exception e) {}
+                checkDownloadStatus(downloadid);
+            }
+        };
+        Uri thisUri = Uri.parse(URL);
+        String filename = thisUri.getLastPathSegment();
+        Notify.notificationCreate(null, "Queued " + filename, R.drawable.ic_info_black_24dp, 2,
+                Network.class, String.valueOf(downloadid), pref);
+    }
+    private void notifyWaitingOnWifi(String URL, String pref) {
+        Uri thisUri = Uri.parse(URL);
+        String filename = thisUri.getLastPathSegment();
+        Notify.notificationCreate(null, "Need Wifi for " + filename, R.drawable.ic_stop, 2,
+                SettingsActivity.class, URL, pref);
+    }
+    private void pendingDownload(String pref, String URL) {
+        if (PendingDownloadPref == null) {
+            PendingDownloadPref = pref;
+            PendingDownloadURL = URL;
+        } else {
+            Log.d("pendingDownloads", "Already have " + URL + " pending");
+        }
     }
 
-    private void notificationCreate(String Message, int icon, int mNotificationId) {
-        Log.d("notificationCreate", "String: " + Message);
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(icon)
-                .setContentTitle(getString(R.string.app_name))
-                .setContentText(Message);
 
-        Intent resultIntent = new Intent(this, ZooGate.class);
-        resultIntent.putExtra(ZooGate.EXTRA_ACTION, ZooGate.ACTION_UPGRADE);
-
-        PendingIntent resultPendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            resultIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT
-        );
-
-        mBuilder.setContentIntent(resultPendingIntent);
-        // Gets an instance of the NotificationManager service
-        NotificationManager mNotifyMgr =
-            (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        // Builds the notification and issues it.
-        mNotifyMgr.notify(mNotificationId, mBuilder.build());
-
-    }
 }

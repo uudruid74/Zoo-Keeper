@@ -11,6 +11,8 @@
     <string name="unknown_info">Unknown</string>
     <string name="unknown_date">Never</string>
     <string name="new_rom_available">A New ROM Update is Available!</string>
+    <string name="no_rom_available">Sorry, no new ROM updates\nTry again tomorrow</string>
+    <string name="new_rom_flashable">A new ROM is ready for manual flashing</string>
     <string name="upgrade_app">Upgrade App</string>
     <string name="view_changelog">View Changelog</string>
     <string name="fetch_rom">Fetch Rom</string>

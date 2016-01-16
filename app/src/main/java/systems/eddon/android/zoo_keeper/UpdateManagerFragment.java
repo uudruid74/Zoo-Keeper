@@ -241,12 +241,18 @@ public class UpdateManagerFragment extends Fragment {
             FileOutputStream write = new FileOutputStream(update);
             StringBuffer sb = new StringBuffer();
             String[] time = CheckTime.getText().toString().trim().split(" |:");
-            if ((time.length > 0) && (time[0].length() > 0) && time[0].matches("\\d+"))
+
+            if ((time.length > 0) && (time[0].length() > 0) && time[0].matches("\\d+")
+                                && Integer.valueOf(time[0]) < 24)
                 h = time[0];
             else h = "2";
-            if ((time.length > 1) && (time[1].length() > 0))
+            if ((time.length > 1) && (time[1].length() > 0) && time[1].matches("\\d+")
+                                && Integer.valueOf(time[1]) > 60)
                 m = time[1];
             else m = "5";
+            if (Integer.valueOf(m) < 10)
+                m = "0" + Integer.valueOf(m);
+
             ZooGate.updatePref(ZooGate.PREF_UPDATE_TIME, h+":"+m);
             sb.append(m + " " + h + " * * *  am startservice -n \""+
                     "systems.eddon.android.zoo_keeper/.NotifyDownloader\" --es Action Upgrade "+

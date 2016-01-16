@@ -1,6 +1,11 @@
 # Zoo-Keeper
 CHANGELOG
 
+1.0.5 BugFix
+	Fix crashes, lots of bugs in downloader fixed
+	Moved "Force Release" to new Advanced menu
+	Added Backup/Restore.  DO NOT USE!!
+
 1.0.4 Open Beta
 	Switch (in Settings) to notify if no updates available (vs small toast)
 	Lighter background images for easier readability

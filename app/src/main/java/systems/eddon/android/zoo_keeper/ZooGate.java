@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.ActionBar;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
@@ -76,8 +77,12 @@ public class ZooGate extends Activity
     public static final String EXTRA_DESCR = "Description";
     public static final String EXTRA_TYPE = "Type";
     public static final String ACTION_UPGRADE = "Upgrade";
+    public static final String ACTION_RESTORE = "Restore";
+    public static final String ACTION_BACKUP = "Backup";
+    public static final String ACTION_RESTART = "Restart";
     public static final String EXTRA_PID = "PID";
     public static final String EXTRA_TITLE = "Title";
+    public static final String EXTRA_CANCEL = "Cancel";
 
     public static Handler handler;
     public static Activity myActivity;
@@ -157,7 +162,6 @@ public class ZooGate extends Activity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        int startPanel = 0;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_zoo_gate);
 
@@ -191,12 +195,7 @@ public class ZooGate extends Activity
             }
         }
 
-        Intent launchIntent = this.getIntent();
-        if (launchIntent != null) {
-            String taskAction = launchIntent.getStringExtra(EXTRA_ACTION);
-            if ((taskAction != null) && (taskAction.equals(ACTION_UPGRADE)))
-                startPanel = 1;
-        }
+
         mNavigationDrawerFragment = (NavigationDrawerFragment)
                 getFragmentManager().findFragmentById(R.id.navigation_drawer);
         mTitle = getTitle();
@@ -206,9 +205,22 @@ public class ZooGate extends Activity
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout));
         installCron();
-        onNavigationDrawerItemSelected(startPanel);
+
+        onNewIntent(this.getIntent());
     }
 
+    @Override
+    protected void onNewIntent(Intent launchIntent) {
+        if (launchIntent != null) {
+            String taskAction = launchIntent.getStringExtra(EXTRA_ACTION);
+            String cancelNotification = launchIntent.getStringExtra(EXTRA_CANCEL);
+            if (cancelNotification != null)
+                ((NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE))
+                        .cancel(Integer.valueOf(cancelNotification));
+            if ((taskAction != null) && (taskAction.equals(ACTION_UPGRADE)))
+                onNavigationDrawerItemSelected(1);
+        }
+    }
     private void spawnImageUpdate() {
         Log.d("spawnImageUpdate", ZooGate.releaseName + ".jpg");
         if (!ZooGate.releaseName.equals("Aardvark")) {
@@ -279,16 +291,6 @@ public class ZooGate extends Activity
             actionBar.setDisplayShowTitleEnabled(true);
             actionBar.setDisplayUseLogoEnabled(true);
             actionBar.setTitle(mTitle);
-        }
-    }
-
-    @Override
-    protected void onPause() {
-        // TODO Auto-generated method stub
-        super.onPause();
-        if (!NotifyDownloader.unregistered) {
-            //unregisterReceiver(NotifyDownloader.receiver);
-            //NotifyDownloader.unregistered = true;
         }
     }
 
@@ -622,8 +624,9 @@ public class ZooGate extends Activity
                         String line = "";
                         while ((line = reader.readLine()) != null) {
                             if (idvalue > 0) {
-                                Notify.showNotificationURL(ZooGate.myActivity, id, title,
-                                        line, "https://eddon.systems", "text/html");
+                                Notify.notificationCreate(title,
+                                        line, R.drawable.ic_clock, 5, AdvancedTools.class,
+                                        null, null);
                             }
                             output.append(line);
                             Log.d("readShellCommand", "read: " + line);
@@ -631,6 +634,10 @@ public class ZooGate extends Activity
                         exit = p.waitFor();
                     } catch (IOException e) {
                         ok = false;
+                        Notify.notificationCreate(title,
+                                e.getLocalizedMessage(), R.drawable.ic_stop, 5,
+                                AdvancedTools.class,
+                                null, null);
                     } finally {
                         reader.close();
                         Log.d("readShellCommand", "exit: " + exit + " returned: " + output);

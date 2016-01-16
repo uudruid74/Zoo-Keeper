@@ -131,6 +131,7 @@ if [ -f "$TAG" ]; then
 fi
 
 EORESTORE
+chmod 755 /system/etc/init.d/10restoreData
 
 cat >/system/etc/init.d/20crond <<"EOCD"
 #!/system/xbin/bash

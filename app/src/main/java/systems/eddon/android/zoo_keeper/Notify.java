@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.net.Network;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
@@ -35,38 +36,56 @@ public class Notify extends IntentService {
 
         ZooGate.popupMessageTime(Message, Toast.LENGTH_LONG);
         if (UrlContent != null) {
-            showNotificationURL(this,PID, Title, Message,UrlContent,Type);
+            notificationCreate("Script: " + Title, Message, R.drawable.ic_script,
+                    Integer.valueOf(PID), null, UrlContent, Type);
         }
     }
     public Notify() { super("ZooKeeper Notify"); }
 
-    public static void showNotificationURL (Context act,String ID, String Title, String Message, String UrlContent,String Type) {
-        Log.d("showNotificationUrl", "String: " + Message + " URL: " + UrlContent + " Type: "+Type);
-        if (Type == null)
-            Type = "text/plain";
+    public static void notificationCreate(String Title, String Message, int icon, int mNotificationId,
+                                   Class openClass, String URL, String Type) {
+        Log.d("notificationCreate", "String: " + Message);
 
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(act)
-                .setSmallIcon(R.drawable.ic_script)
+        if (Type == null) {
+            if (openClass == null) {
+                Type = "text/plain";
+            } else {
+                Type = ZooGate.ACTION_UPGRADE;
+            }
+        }
+        if (Title == null)
+            Title = ZooGate.myActivity.getString(R.string.app_name);
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(ZooGate.myActivity)
+                .setSmallIcon(icon)
                 .setContentTitle(Title)
                 .setContentText(Message);
 
-        Intent resultIntent = new Intent(Intent.ACTION_VIEW);
-        Uri uri = Uri.parse(UrlContent);
-        resultIntent.setDataAndType(uri,Type);
+        Intent resultIntent;
 
+        if (openClass == null) {
+            resultIntent = new Intent(Intent.ACTION_VIEW);
+            Uri uri = Uri.parse(URL);
+            resultIntent.setDataAndType(uri, Type);
+        } else if (openClass == Network.class) {
+            resultIntent = new Intent(android.provider.Settings.ACTION_WIFI_SETTINGS);
+        } else {
+            resultIntent = new Intent(ZooGate.myActivity, openClass);
+            resultIntent.putExtra(ZooGate.EXTRA_ACTION, Type);
+            resultIntent.putExtra(ZooGate.EXTRA_URL, URL);
+            resultIntent.putExtra(ZooGate.EXTRA_CANCEL, String.valueOf(mNotificationId));
+        }
         PendingIntent resultPendingIntent = PendingIntent.getActivity(
-            act,
-            0,
-            resultIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT
+                ZooGate.myActivity,
+                0,
+                resultIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT
         );
-
+        ZooGate.popupMessage(Message);
         mBuilder.setContentIntent(resultPendingIntent);
-        // Sets an ID for the notification
-        int mNotificationId = Integer.valueOf(ID);
         // Gets an instance of the NotificationManager service
         NotificationManager mNotifyMgr =
-            (NotificationManager) act.getSystemService(NOTIFICATION_SERVICE);
+                (NotificationManager) ZooGate.myActivity.getSystemService(NOTIFICATION_SERVICE);
         // Builds the notification and issues it.
         mNotifyMgr.notify(mNotificationId, mBuilder.build());
 

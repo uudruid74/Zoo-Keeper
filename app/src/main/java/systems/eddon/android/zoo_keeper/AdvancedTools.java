@@ -1,6 +1,9 @@
 package systems.eddon.android.zoo_keeper;
 
 import android.app.Activity;
+import android.app.NotificationManager;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -18,29 +21,32 @@ public class AdvancedTools extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_advanced_tools);
+        onNewIntent(this.getIntent());
+    }
+    @Override
+    protected void onNewIntent(Intent launchIntent) {
+        if (launchIntent != null) {
+            String cancelNotification = launchIntent.getStringExtra(ZooGate.EXTRA_CANCEL);
+            if (cancelNotification != null)
+                ((NotificationManager) this.getSystemService(Context.NOTIFICATION_SERVICE))
+                        .cancel(Integer.valueOf(cancelNotification));
+        }
+        adjustGui();
+    }
+    private void adjustGui() {
         Button snapshot = (Button) findViewById(R.id.snapshot_button);
         snapshot.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                final Runnable enableButtons = new Runnable() {
-                    public void run() {
-                        if (new File(ZooGate.ACTUAL_SD_STORAGE, "ZooKeeper/snapshot").listFiles().length > 4) {
-                            Restore.setEnabled(true);
-                            Restore.setAlpha(1f);
-                            RestoreOnBoot.setEnabled(true);
-                            RestoreOnBoot.setAlpha(1f);
-                        }
-                    }
-                };
-                ZooGate.popupMessage("Backing up all your data ...");
-                ZooGate.readShellCommandNotify("5", "Backing up apps & data",
-                        "su -c /data/media/0/ZooKeeper/backup.sh", enableButtons);
+                Intent intent = new Intent(ZooGate.myActivity, NotifyDownloader.class);
+                intent.putExtra(ZooGate.EXTRA_ACTION, ZooGate.ACTION_BACKUP);
+                ZooGate.myActivity.startService(intent);
             }
         });
         Button ReInstall = (Button) findViewById(R.id.reinstall_button);
         ReInstall.setOnClickListener(new View.OnClickListener() {
                                          @Override
-                                         public void onClick (View v){
+                                         public void onClick(View v) {
                                              ZooGate.popupMessage("Longpress to erase all Cron & ZooKeeper data");
                                          }
                                      }
@@ -80,17 +86,9 @@ public class AdvancedTools extends Activity {
             Restore.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    Runnable restoreComplete = new Runnable() {
-                        public void run() {
-                            Notify.showNotificationURL(ZooGate.myActivity,"5","Restoring Backup",
-                                    "Restore Complete", null, null);
-                        }
-                    };
-                    ZooGate.popupMessage("Set your phone down.  This will take awhile!");
-                    ZooGate.readShellCommandNotify("5", "Restoring Backup",
-                            "/data/media/0/ZooKeeper/restore.sh",
-                            restoreComplete);
-                    ZooGate.popupMessage("Data Restore Complete");
+                    Intent intent = new Intent(ZooGate.myActivity, NotifyDownloader.class);
+                    intent.putExtra(ZooGate.EXTRA_ACTION, ZooGate.ACTION_RESTORE);
+                    ZooGate.myActivity.startService(intent);
                     return true;
                 }
             });
