@@ -230,6 +230,7 @@ echo
 echo "Backing Up Extra Files ..."
 tar -cpJ -f /data/media/0/ZooKeeper/app-lib.tar.xz /data/app-lib 2>/dev/null
 tar -cpJ -f /data/media/0/ZooKeeper/app-private.tar.xz /data/app-private 2>/dev/null
+date >snapshot/full-backup.txt
 echo "Backup Complete!"
 
 EOBACKUP
@@ -284,7 +285,12 @@ DIR="/data/media/0/ZooKeeper/snapshot"
 
 if [ -z "$APP" ]; then
         APP="*"
-        echo "Restoring all apps .. this will take time!"
+        if [ -f "$DIR/full-backup.txt" ]; then
+            echo "Restoring all apps .. this will take time!"
+        else
+            echo "Not a full backup!  Aborting!"
+            exit
+        fi
 else
         if [ -d "${DIR}/${APP}" ]; then
                 echo "Restoring $APP"

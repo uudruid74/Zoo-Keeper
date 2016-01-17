@@ -129,34 +129,29 @@ public class NotifyDownloader extends IntentService {
         }
     };
 
-    private void restartDownload(String URL, String thisPref) {
-        Log.d("restartDownload", "URL=" + URL + " Action=" + thisPref);
-        enqueueDownload(URL, thisPref);
+    private void restartDownload(String URL, String description) {
+        Log.d("restartDownload", "URL=" + URL + " Description=" + description);
+        enqueueDownload(URL, ZooGate.PREF_FILE_ROM_UPDATE);
     }
+
+    public static Runnable fixGuiByIntent = new Runnable() {
+        public void run() {
+            Log.d("fixGuiByIntent", "Signaling user interface reload");
+            Intent intent = new Intent(ZooGate.ACTION_REPAINT);
+            ZooGate.myActivity.sendBroadcast(intent);
+        }
+    };
+
     private void startBackup() {
-        final Runnable enableButtons = new Runnable() {
-                    public void run() {
-                        if (ZooGate.myActivity != null &&
-                                new File(ZooGate.ACTUAL_SD_STORAGE, "ZooKeeper/snapshot")
-                                        .listFiles().length > 4) {
-                            Button Restore = (Button) ZooGate.myActivity
-                                    .findViewById(R.id.restorenow_button);
-                            if (Restore != null) {
-                                Restore.setEnabled(true);
-                                Restore.setAlpha(1f);
-                            }
-                            Button RestoreOnBoot = (Button) ZooGate.myActivity
-                                    .findViewById(R.id.restoreonboot_button);
-                            if (RestoreOnBoot != null) {
-                                RestoreOnBoot.setEnabled(true);
-                                RestoreOnBoot.setAlpha(1f);
-                            }
-                        }
-                    }
-                };
+        final Runnable signalDone = new Runnable() {
+            public void run() {
+                ZooGate.popupMessage("Backup Is Complete!");
+                fixGuiByIntent.run();
+            }
+        };
         ZooGate.popupMessage("Backing up all your data ...");
         ZooGate.readShellCommandNotify("5", "Backing up apps & data",
-                "su -c /data/media/0/ZooKeeper/backup.sh", enableButtons);
+                "su -c /data/media/0/ZooKeeper/backup.sh", signalDone);
     }
 
     private void startRestore() {
@@ -202,14 +197,14 @@ public class NotifyDownloader extends IntentService {
             restartDownload(url,description);
         } else {
             dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-            enqueueDownload(url, extra_action);
+            enqueueDownload(url,extra_action);
         }
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d("onCreate", "Receiver Registered");
+        Log.d("onCreate", "Receiver Registration");
         if (!registered) {
             ZooGate.myActivity.registerReceiver(receiver, new IntentFilter(
                     DownloadManager.ACTION_DOWNLOAD_COMPLETE));
@@ -221,8 +216,8 @@ public class NotifyDownloader extends IntentService {
 
     @Override
     public void onDestroy() {
-        Log.d("onDestroy", "receiver unregistered");
         if ((registered) && IdToPREF.isEmpty()) {
+            Log.d("onDestroy", "receiver unregistered");
             ZooGate.myActivity.unregisterReceiver(receiver);
             registered = false;
         }
@@ -591,7 +586,8 @@ public class NotifyDownloader extends IntentService {
     private void notifySafetyFailure() {
         Notify.notificationCreate(null,
                 "Safety checks failed.  Recovery untouched.  S:" +
-                        SuccessCount + " F:" + FailureCount, R.drawable.ic_stop, 03, ZooGate.class, null, null);
+                        SuccessCount + " F:" + FailureCount, R.drawable.ic_stop, 03,
+                ZooGate.class, null, null);
     }
     private void notifyNothingNew() {
         Notify.notificationCreate(null,
@@ -622,7 +618,7 @@ public class NotifyDownloader extends IntentService {
         };
         Uri thisUri = Uri.parse(URL);
         String filename = thisUri.getLastPathSegment();
-        Notify.notificationCreate(null, "Queued " + filename, R.drawable.ic_info_black_24dp, 2,
+        Notify.notificationCreate(null, "Queued " + filename, R.drawable.ic_info, 2,
                 Network.class, String.valueOf(downloadid), pref);
     }
     private void notifyWaitingOnWifi(String URL, String pref) {

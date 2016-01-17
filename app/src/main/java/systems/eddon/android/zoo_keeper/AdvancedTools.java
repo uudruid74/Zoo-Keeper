@@ -2,9 +2,12 @@ package systems.eddon.android.zoo_keeper;
 
 import android.app.Activity;
 import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -16,12 +19,30 @@ public class AdvancedTools extends Activity {
     EditText Release;
     Button Restore;
     Button RestoreOnBoot;
+    public static IntentFilter mIntentFilter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_advanced_tools);
+        mIntentFilter = new IntentFilter();
+        mIntentFilter.addAction(ZooGate.ACTION_REPAINT);
         onNewIntent(this.getIntent());
+    }
+
+    @Override
+    protected void onResume() {
+        Log.d("onResume", "registerReceiver");
+        registerReceiver(mIntentReceiver, mIntentFilter);
+        adjustGui();
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        Log.d("onPause", "unregisterReceiver");
+        unregisterReceiver(mIntentReceiver);
+        super.onPause();
     }
     @Override
     protected void onNewIntent(Intent launchIntent) {
@@ -33,7 +54,17 @@ public class AdvancedTools extends Activity {
         }
         adjustGui();
     }
+
+    private BroadcastReceiver mIntentReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d("onReceive","Got intent!");
+            onNewIntent(intent);
+        }
+    };
+
     private void adjustGui() {
+        Log.d("adjustGui","Resetting Interface");
         Button snapshot = (Button) findViewById(R.id.snapshot_button);
         snapshot.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -74,9 +105,12 @@ public class AdvancedTools extends Activity {
         Restore = (Button) findViewById(R.id.restorenow_button);
         RestoreOnBoot = (Button) findViewById(R.id.restoreonboot_button);
 
-        File snapshotDir = new File(ZooGate.ACTUAL_SD_STORAGE, "ZooKeeper/snapshot");
-        if(snapshotDir.exists() && snapshotDir.listFiles().length > 4)
+        File snapshotDate = new File(ZooGate.ACTUAL_SD_STORAGE, "ZooKeeper/snapshot/full-backup.txt");
+        TextView BackupDate = (TextView) findViewById(R.id.backup_date);
+        if(snapshotDate.exists())
         {
+            BackupDate.setText(ZooGate.readFile(snapshotDate.getAbsolutePath()));
+
             Restore.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -92,6 +126,8 @@ public class AdvancedTools extends Activity {
                     return true;
                 }
             });
+            Restore.setEnabled(true);
+            Restore.setAlpha(1f);
 
             RestoreOnBoot.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -114,9 +150,13 @@ public class AdvancedTools extends Activity {
                     return true;
                 }
             });
+            RestoreOnBoot.setEnabled(true);
+            RestoreOnBoot.setAlpha(1f);
         }
         else
         {
+            BackupDate.setText("No Backup Found");
+
             Restore.setEnabled(false);
             Restore.setAlpha(0.5f);
             RestoreOnBoot.setEnabled(false);

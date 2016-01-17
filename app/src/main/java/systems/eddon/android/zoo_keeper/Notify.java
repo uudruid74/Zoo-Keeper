@@ -56,13 +56,7 @@ public class Notify extends IntentService {
         if (Title == null)
             Title = ZooGate.myActivity.getString(R.string.app_name);
 
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(ZooGate.myActivity)
-                .setSmallIcon(icon)
-                .setContentTitle(Title)
-                .setContentText(Message);
-
         Intent resultIntent;
-
         if (openClass == null) {
             resultIntent = new Intent(Intent.ACTION_VIEW);
             Uri uri = Uri.parse(URL);
@@ -74,14 +68,28 @@ public class Notify extends IntentService {
             resultIntent.putExtra(ZooGate.EXTRA_ACTION, Type);
             resultIntent.putExtra(ZooGate.EXTRA_URL, URL);
             resultIntent.putExtra(ZooGate.EXTRA_CANCEL, String.valueOf(mNotificationId));
+            resultIntent.putExtra(ZooGate.EXTRA_DESCR, Title);
+            if (mNotificationId == 2)
+                Title = ZooGate.myActivity.getString(R.string.app_name);
         }
+
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(ZooGate.myActivity)
+                .setSmallIcon(icon)
+                .setContentTitle(Title)
+                .setContentText(Message);
+
+
         PendingIntent resultPendingIntent = PendingIntent.getActivity(
                 ZooGate.myActivity,
                 0,
                 resultIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT
         );
-        ZooGate.popupMessage(Message);
+
+        // No Toasts on Backup/Restore ??
+        if (mNotificationId != 5)
+            ZooGate.popupMessage(Message);
+
         mBuilder.setContentIntent(resultPendingIntent);
         // Gets an instance of the NotificationManager service
         NotificationManager mNotifyMgr =

@@ -80,6 +80,7 @@ public class ZooGate extends Activity
     public static final String ACTION_RESTORE = "Restore";
     public static final String ACTION_BACKUP = "Backup";
     public static final String ACTION_RESTART = "Restart";
+    public static final String ACTION_REPAINT = "systems.eddon.android.ZooKeeper.REPAINT";
     public static final String EXTRA_PID = "PID";
     public static final String EXTRA_TITLE = "Title";
     public static final String EXTRA_CANCEL = "Cancel";
