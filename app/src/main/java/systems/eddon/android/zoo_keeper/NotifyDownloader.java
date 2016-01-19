@@ -120,7 +120,8 @@ public class NotifyDownloader extends IntentService {
                         FailureCount++;
                         ZooGate.popupMessage("FAIL! Can't download this url:\n" +
                                 c.getString(c.getColumnIndex(DownloadManager.COLUMN_URI)));
-                        notifyDownloadFail();
+                        Uri uri = Uri.parse(c.getString(c.getColumnIndex(DownloadManager.COLUMN_URI)));
+                        notifyDownloadFail(uri.getLastPathSegment());
                         IdToPREF.remove(downloadId);
                         break;
                 }
@@ -243,6 +244,9 @@ public class NotifyDownloader extends IntentService {
                 };
                 ZooGate.myActivity.runOnUiThread(updateTv);
             }
+
+            new File(ZooGate.DOWNLOAD_DIR + "WL-current-rom").delete();
+
             // Update last Release name if changed
             Log.d("PREF_FILE_ROM_CHECK", "Now on " + ZooGate.releaseName + " but available is " + nextRel);
             if (!nextRel.equals(ZooGate.releaseName)) {
@@ -372,7 +376,7 @@ public class NotifyDownloader extends IntentService {
                         Log.d("PREF_FILE_ROM_MD5", "["+calcMD5Sum+"] vs [" + downloadMD5+"]");
                         FailureCount++;
                         ZooGate.updateSwitch(ZooGate.PREF_CHOICE_DOWNLOAD, false);
-                        notifyDownloadFail();
+                        notifyDownloadFail(zipfilename);
                     }
                 }
             };
@@ -519,6 +523,8 @@ public class NotifyDownloader extends IntentService {
             Log.d("enqueueDownload", "File exists - skipping!");
             long downloadId = 1000 + new Random().nextInt();
             IdToPREF.put(downloadId, extra_action);
+            if (filename.endsWith(".zip"))
+                DownloadFileList.add(filename);
             try {
                 FileInputStream fis = new FileInputStream(new File(absolutefilename));
                 fileSuccessful(downloadId, fis);
@@ -566,8 +572,8 @@ public class NotifyDownloader extends IntentService {
         checkDownloadStatus(id);
     }
 
-    private void notifyDownloadFail() {
-        Notify.notificationCreate("ZooKeeper Download Failed", FailureCount + " files failed!",
+    private void notifyDownloadFail(String filename) {
+        Notify.notificationCreate("Failed Download", filename,
                 R.drawable.ic_fail, 04, ZooGate.class, null, null);
     }
     private void notifyDownloadAvail() {
