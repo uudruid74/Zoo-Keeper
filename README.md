@@ -1,5 +1,11 @@
 # Zoo-Keeper
 CHANGELOG
+
+1.0.8 BugFix
+	Display of SystemUpdate screen not always updated properly
+	Fixed a crash when exiting app
+	DO NOT USE RESTORE FEATURE!
+
 1.0.7 BugFix
 	Issues with current ROM not being recognized because it was cached
 	Couple other minor bugs seen while testing Dodo update
