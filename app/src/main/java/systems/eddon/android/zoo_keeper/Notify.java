@@ -36,7 +36,7 @@ public class Notify extends IntentService {
 
         ZooGate.popupMessageTime(Message, Toast.LENGTH_LONG);
         if (UrlContent != null) {
-            notificationCreate("Script: " + Title, Message, R.drawable.ic_script,
+            notificationCreate(Title, Message, R.drawable.ic_script,
                     Integer.valueOf(PID), null, UrlContent, Type);
         }
     }
