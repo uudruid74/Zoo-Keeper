@@ -247,7 +247,7 @@ public class UpdateManagerFragment extends Fragment {
                 h = time[0];
             else h = "2";
             if ((time.length > 1) && (time[1].length() > 0) && time[1].matches("\\d+")
-                                && Integer.valueOf(time[1]) > 60)
+                                && Integer.valueOf(time[1]) < 60)
                 m = time[1];
             else m = "5";
             if (Integer.valueOf(m) < 10)
