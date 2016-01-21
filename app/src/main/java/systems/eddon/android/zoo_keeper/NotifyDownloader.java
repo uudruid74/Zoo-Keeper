@@ -207,7 +207,7 @@ public class NotifyDownloader extends IntentService {
         super.onCreate();
         Log.d("onCreate", "Receiver Registration");
         if (!registered) {
-            ZooGate.myActivity.registerReceiver(receiver, new IntentFilter(
+            registerReceiver(receiver, new IntentFilter(
                     DownloadManager.ACTION_DOWNLOAD_COMPLETE));
             registered = true;
         } else {
@@ -219,7 +219,7 @@ public class NotifyDownloader extends IntentService {
     public void onDestroy() {
         if ((registered) && IdToPREF.isEmpty()) {
             Log.d("onDestroy", "receiver unregistered");
-            ZooGate.myActivity.unregisterReceiver(receiver);
+            unregisterReceiver(receiver);
             registered = false;
         }
         super.onDestroy();
@@ -248,17 +248,17 @@ public class NotifyDownloader extends IntentService {
             new File(ZooGate.DOWNLOAD_DIR + "WL-current-rom").delete();
 
             // Update last Release name if changed
+            if (ZooGate.sectionNumber == 1) {
+                Runnable updateTv = new Runnable() {
+                    public void run() {
+                        TextView tv = (TextView) ZooGate.myActivity.findViewById(R.id.now_available);
+                        tv.setText(nextRel);
+                    }
+                };
+                ZooGate.myActivity.runOnUiThread(updateTv);
+            }
             Log.d("PREF_FILE_ROM_CHECK", "Now on " + ZooGate.releaseName + " but available is " + nextRel);
             if (!nextRel.equals(ZooGate.releaseName)) {
-                if (ZooGate.sectionNumber == 1) {
-                    Runnable updateTv = new Runnable() {
-                        public void run() {
-                            TextView tv = (TextView) ZooGate.myActivity.findViewById(R.id.now_available);
-                            tv.setText(nextRel);
-                        }
-                    };
-                    ZooGate.myActivity.runOnUiThread(updateTv);
-                }
                 // Start the download chain
                 if (sp.getBoolean(ZooGate.PREF_USER_DOWNLOAD, true)) {
                     startDownloadChain();

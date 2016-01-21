@@ -1,8 +1,12 @@
 # Zoo-Keeper
 CHANGELOG
+1.0.7 BugFix
+	Issues with current ROM not being recognized because it was cached
+	Couple other minor bugs seen while testing Dodo update
+	Still do NOT use Restore feature yet!
 
 1.0.6 BugFix
-	Get issues with DOwnloader and Notifications synce
+	Get issues with Downloader and Notifications synced
 	  -- had to work around Android bug.
 
 1.0.5 BugFix
